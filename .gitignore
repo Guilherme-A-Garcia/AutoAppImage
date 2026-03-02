@@ -208,6 +208,6 @@ __marimo__/
 
 # Misc.
 *build-venv*/
-test*
+test.*
 test_project/
 appimagetool.*
