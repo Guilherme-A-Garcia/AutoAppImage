@@ -7,7 +7,14 @@ from CTkMessagebox import CTkMessagebox
 def main():
     app = Controller()
     app.root.mainloop()
-    
+
+def dynamic_resolution(d_root, d_width, d_height):
+    screen_height = d_root.winfo_screenheight()
+    screen_width = d_root.winfo_screenwidth()
+    x = (screen_width // 2) - (d_width // 2)
+    y = (screen_height // 2) - (d_height // 2)
+    d_root.geometry(f"{d_width}x{d_height}+{x}+{y}")
+
 def err_msg(master, text):
     msg = CTkMessagebox(master=master, message=text, icon='cancel', title="Error")
 
@@ -51,7 +58,7 @@ class MainWindow(ctk.CTkToplevel):
         self.rowconfigure(2, weight=6)
         self.rowconfigure(3, weight=1)
         
-        self.geometry("500x650")
+        dynamic_resolution(self, 500, 650)
         self.title("AutoAppImage")
         
         self.main_label = ctk.CTkLabel(self, text="AutoAppImage", font=("", 30))
