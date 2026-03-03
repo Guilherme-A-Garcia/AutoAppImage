@@ -130,9 +130,9 @@ class MainWindow(ctk.CTkToplevel):
         
         self.nuitka_parts = ['python', '-m', 'nuitka', '--standalone', '--remove-output', '--output-dir=dist']
         
-        # default conditional
+        # make a dictionary of libraries and their respective enable-plugin counterpart
+        # default conditional to check if the dependencies need --enable-plugin
         # make optional enable-plugin field
-        # enable-plugin, dictionary of libraries and their respective enable-plugin counterpart
         
 # Current step: Build with a compiler as a standalone folder(in this case: nuitka):
 # python3 -m nuitka --standalone --remove-output --enable-plugin=plugin-name --include-package-data=optional-data --include-package-data=customtkinter --linux-onefile-icon=optional-icon.png --include-data-files=icon.png=optional-icon.format=optional-icon.format --output-dir=dist --output-filename="AppName" app_name.py
