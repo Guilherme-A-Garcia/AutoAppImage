@@ -1,5 +1,6 @@
 import os
 import sys
+import subprocess
 import customtkinter as ctk
 from CTkMessagebox import CTkMessagebox
 
@@ -35,6 +36,7 @@ class MainWindow(ctk.CTkToplevel):
         super().__init__(app.root)
         self.app = app
         self.imports = []
+        self.directory = ''
         
         self.protocol("WM_DELETE_WINDOW", lambda: self.app.root.destroy())
         self.bind("<Button-1>", lambda e: e.widget.focus())
@@ -58,18 +60,35 @@ class MainWindow(ctk.CTkToplevel):
         self.entry_frame = ctk.CTkFrame(self, fg_color="transparent")
         self.entry_frame.grid(row=2, columnspan=3, sticky="nsew")
         
+        self.directory_label = ctk.CTkLabel(self.entry_frame, text="Enter your project directory:", font=("", 16))
+        self.directory_label.pack(anchor="center", padx=20)
+        
+        self.directory_entry_var = ctk.StringVar(value='')
+        self.directory_entry = ctk.CTkEntry(self.entry_frame, textvariable=self.directory_entry_var)
+        self.directory_entry.pack(anchor="center", padx=30, fill='x')
+        
+        self.directory_search = ctk.CTkButton(self.entry_frame, text="🔎 Search directory", font=("", 15), command=self.get_directory)
+        self.directory_search.pack(anchor="center", pady=(2,10))
+        
         self.dependencies_label = ctk.CTkLabel(self.entry_frame, text="Enter your project's imports (separated by commas):", font=("", 16))
         self.dependencies_label.pack(anchor="center", padx=20)
         self.dependencies_entry = ctk.CTkEntry(self.entry_frame, placeholder_text="Leave empty if third-party dependencies aren't needed.", placeholder_text_color="gray")
         self.dependencies_entry.pack(anchor="center", padx=30, fill='x')
-        
-        self.directory_label = ctk.CTkLabel(self.entry_frame, text="Enter your project directory:", font=("", 16))
-        self.directory_label.pack(anchor="center", padx=20)
-        self.directory_entry = ctk.CTkEntry(self.entry_frame)
-        self.directory_entry.pack(anchor="center", padx=30, fill='x')
 
         self.build_button = ctk.CTkButton(self, text="Build AppImage", font=("", 20), command=self.build_appimage)
         self.build_button.grid(row=3, columnspan=3, sticky="ew", padx=100)
+
+    def get_directory(self):
+        self.new_directory = ctk.filedialog.askdirectory(title="Directory selection")
+        if not self.new_directory:
+            return
+        
+        if os.path.exists(self.new_directory):
+            self.directory = self.new_directory
+            self.directory_entry_var.set(self.directory)
+        else:
+            err_msg(master=self, text="Error: Invalid path.")
+            return
 
     def is_dependent(self):
         if self.dependencies_entry.get():
@@ -89,7 +108,7 @@ class MainWindow(ctk.CTkToplevel):
                 err_msg(master=self, text="Error: Please fill all required entries.")
                 return
         
-        self.project_directory = self.directory_entry.get().strip()
+        self.project_directory = self.directory_entry.get().strip()  # CWD var <-----------
         if not os.path.exists(self.project_directory):
             err_msg(master=self, text="Error: The project directory you provided is invalid.")
             return
@@ -109,7 +128,15 @@ class MainWindow(ctk.CTkToplevel):
         self.install_libraries = ['pip', 'install', 'nuitka']
         self.install_libraries += self.imports
         
+        self.nuitka_parts = ['python', '-m', 'nuitka', '--standalone', '--remove-output', '--output-dir=dist']
+        
+        # default conditional
+        # make optional enable-plugin field
+        # enable-plugin, dictionary of libraries and their respective enable-plugin counterpart
+        
+# Current step: Build with a compiler as a standalone folder(in this case: nuitka):
+# python3 -m nuitka --standalone --remove-output --enable-plugin=plugin-name --include-package-data=optional-data --include-package-data=customtkinter --linux-onefile-icon=optional-icon.png --include-data-files=icon.png=optional-icon.format=optional-icon.format --output-dir=dist --output-filename="AppName" app_name.py
+# (--include-package-data is important for a bunch of libraries)
         
 if __name__ == "__main__":
-    main()
-
+    main()  
