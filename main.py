@@ -36,7 +36,10 @@ class MainWindow(ctk.CTkToplevel):
         super().__init__(app.root)
         self.app = app
         self.imports = []
-        self.directory = ''
+        self.nuitka_plugins = {'gevent': ('gevent',), 'glfw': ('glfw',), 'multiprocessing': ('multiprocessing',),
+                        'numpy': ('numpy', 'scipy', 'pandas', 'matplotlib'), 'pmw-freezer': ('Pmw',), 'pyqt5': ('PyQt5',),
+                        'pyside2': ('PySide2',), 'pyside6': ('PySide6',), 'pyzmq': ('pyzmq',),
+                        'tensorflow': ('tensorflow',), 'tk-inter': ('tkinter', 'customtkinter', 'CTkMessagebox', '_tkinter'),}
         
         self.protocol("WM_DELETE_WINDOW", lambda: self.app.root.destroy())
         self.bind("<Button-1>", lambda e: e.widget.focus())
@@ -97,12 +100,12 @@ class MainWindow(ctk.CTkToplevel):
             return False
 
     def get_imports(self):
-        self.new_imports += self.dependencies_entry.get().replace(',', '').strip().split()
-        print(self.new_imports)
-        return self.new_imports
+        # I hate list comprehension but oh well
+        self.cleaned = [dep.strip() for dep in self.dependencies_entry.get().split(",") if dep.strip()]
+        return self.cleaned
 
     def build_appimage(self):
-        fields = (self.directory_entry)
+        fields = (self.directory_entry,)
         for field in fields:
             if not field.get():
                 err_msg(master=self, text="Error: Please fill all required entries.")
@@ -114,24 +117,33 @@ class MainWindow(ctk.CTkToplevel):
             return
 
         if self.is_dependent():
-            self.imports += self.get_imports()
+            self.imports = self.get_imports()
 
         self.new_venv_name = 'build-venv'
-        self.venv_creation = ['python', '-m', 'venv', self.new_venv_name]
+        self.venv_directory = os.path.join(self.project_directory, self.new_venv_name)
+        self.venv_creation = ['python', '-m', 'venv', self.venv_directory]
 
         if os.path.exists(self.new_venv_name):
             self.new_venv_name = 'appimage-build-venv'
             self.venv_creation[-1] = self.new_venv_name
         
-        self.activate_new_venv = ['source', f'{self.new_venv_name}/bin/activate']
+        self.venv_python = os.path.join(self.venv_directory, 'bin', 'python')
+        self.venv_pip = os.path.join(self.venv_directory, 'bin', 'pip')
         
-        self.install_libraries = ['pip', 'install', 'nuitka']
-        self.install_libraries += self.imports
+        self.install_libraries = [self.venv_pip, 'install', 'nuitka', *self.imports]
         
-        self.nuitka_parts = ['python', '-m', 'nuitka', '--standalone', '--remove-output', '--output-dir=dist']
+        self.nuitka_parts = [self.venv_python, '-m', 'nuitka', '--standalone', '--remove-output', '--output-dir=dist']
         
-        # make a dictionary of libraries and their respective enable-plugin counterpart
-        # default conditional to check if the dependencies need --enable-plugin
+        if self.is_dependent():
+            self.enabled_plugins = set()
+            for dependency in self.imports:
+                for plugin_name, plugin_value in self.nuitka_plugins.items():
+                    if dependency in plugin_value:
+                        self.enabled_plugins.add(plugin_name)
+            
+            for plugin in self.enabled_plugins:
+                self.nuitka_parts.append(f'--enable-plugin={plugin}')
+                
         # make optional enable-plugin field
         
 # Current step: Build with a compiler as a standalone folder(in this case: nuitka):
