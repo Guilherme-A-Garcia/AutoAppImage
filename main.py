@@ -42,9 +42,9 @@ class MainWindow(ctk.CTkToplevel):
     def __init__(self, app):
         super().__init__(app.root)
         self.app = app
-        self.file_directory = None
-        self.project_directory = None
-        self.icon_directory = None
+        self.file_directory = ''
+        self.project_directory = ''
+        self.icon_directory = ''
         self.imports = []
         self.nuitka_plugins = {'gevent': ('gevent',), 'glfw': ('glfw',), 'multiprocessing': ('multiprocessing',),
                         'numpy': ('numpy', 'scipy', 'pandas', 'matplotlib'), 'pmw-freezer': ('Pmw',), 'pyqt5': ('PyQt5',),
@@ -73,6 +73,13 @@ class MainWindow(ctk.CTkToplevel):
         self.entry_frame = ctk.CTkFrame(self, fg_color="transparent")
         self.entry_frame.grid(row=2, columnspan=3, sticky="nsew")
         
+        # --output-filename="AppName"
+        self.name_label = ctk.CTkLabel(self.entry_frame, text="Enter your project's name (optional):", font=("", 16))
+        self.name_label.pack(anchor="center", padx=20)
+        self.name_entry_var = ctk.StringVar(value='')
+        self.name_entry = ctk.CTkEntry(self.entry_frame, textvariable=self.name_entry_var)
+        self.name_entry.pack(anchor="center", padx=30, fill='x', pady=(2,10))
+
         self.directory_label = ctk.CTkLabel(self.entry_frame, text="Enter your main .py file path:", font=("", 16))
         self.directory_label.pack(anchor="center", padx=20)
         self.directory_entry_var = ctk.StringVar(value='')
@@ -92,7 +99,7 @@ class MainWindow(ctk.CTkToplevel):
         self.optional_data_entry = ctk.CTkEntry(self.entry_frame, placeholder_text="Only include dependencies that need data detection (e.g.: customtkinter)", placeholder_text_color="gray")
         self.optional_data_entry.pack(anchor="center", padx=30, fill='x', pady=(2,10))
         
-        self.icon_label = ctk.CTkLabel(self.entry_frame, text="Enter the project's icon path (optinal, preferably .png):", font=("", 16))
+        self.icon_label = ctk.CTkLabel(self.entry_frame, text="Enter the project's icon path (optional, preferably .png):", font=("", 16))
         self.icon_label.pack(anchor="center", padx=20)
         self.icon_entry_var = ctk.StringVar(value='')
         self.icon_entry = ctk.CTkEntry(self.entry_frame, textvariable=self.icon_entry_var)
@@ -111,7 +118,7 @@ class MainWindow(ctk.CTkToplevel):
         self.extra_optional_search.pack(anchor="center", pady=(2,10))
         
         self.build_button = ctk.CTkButton(self, text="Build AppImage", font=("", 20), command=self.build_appimage)
-        self.build_button.grid(row=3, columnspan=3, sticky="ew", padx=100)
+        self.build_button.grid(row=3, columnspan=3, sticky="ew", padx=100, pady=20)
 
     def get_extra_dependencies(self):
         self.pre_extra_directory = ctk.filedialog.askdirectory(title="Extra dependency path selection")
@@ -161,13 +168,19 @@ class MainWindow(ctk.CTkToplevel):
             return False
         
     def has_icon(self):
-        if self.icon_entry.get():
+        if self.icon_entry_var.get() != '':
             return True
         else:
             return False
     
     def has_extra_optional(self):
         if self.extra_optional_entry_var.get() != '':
+            return True
+        else:
+            return False
+    
+    def has_name(self):
+        if self.name_entry_var.get() != '':
             return True
         else:
             return False
@@ -209,10 +222,12 @@ class MainWindow(ctk.CTkToplevel):
             self.new_venv_name = 'appimage-build-venv'
         
         self.venv_directory = os.path.join(self.project_directory, self.new_venv_name)
-        self.venv_creation = ['python', '-m', 'venv', self.venv_directory]
+        self.file_name = os.path.basename(self.file_directory)
+        
         self.venv_python = os.path.join(self.venv_directory, 'bin', 'python')
         self.venv_pip = os.path.join(self.venv_directory, 'bin', 'pip')
-        self.file_name = os.path.basename(self.file_directory)
+        
+        self.venv_creation = [self.venv_python, '-m', 'venv', self.venv_directory]
         
         self.install_libraries = [self.venv_pip, 'install', 'nuitka', *self.imports]
         
@@ -244,9 +259,14 @@ class MainWindow(ctk.CTkToplevel):
             for dep in self.extra_deps:
                 self.nuitka_parts.append(f'--include-data-files={dep}')
         
-        if self.has_icon:
+        if self.has_icon():
             self.nuitka_parts.append(f'--linux-onefile-icon={self.icon_directory}')
             self.nuitka_parts.append(f'--include-data-files={os.path.dirname(self.icon_directory)}={os.path.basename(self.icon_directory)}')
+        
+        if self.has_name():
+            self.nuitka_parts.append(f'--output-filename="{self.name_entry_var.get()}"')
+        else:
+            self.nuitka_parts.append(f'--output-filename="{self.file_name}"')
         
         self.nuitka_parts.append(self.file_name)
         
