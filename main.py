@@ -44,6 +44,7 @@ class MainWindow(ctk.CTkToplevel):
         self.app = app
         self.file_directory = None
         self.project_directory = None
+        self.icon_directory = None
         self.imports = []
         self.nuitka_plugins = {'gevent': ('gevent',), 'glfw': ('glfw',), 'multiprocessing': ('multiprocessing',),
                         'numpy': ('numpy', 'scipy', 'pandas', 'matplotlib'), 'pmw-freezer': ('Pmw',), 'pyqt5': ('PyQt5',),
@@ -90,7 +91,16 @@ class MainWindow(ctk.CTkToplevel):
         self.optional_data_label.pack(anchor="center", padx=20)
         self.optional_data_entry = ctk.CTkEntry(self.entry_frame, placeholder_text="Only include dependencies that need data detection (e.g.: customtkinter)", placeholder_text_color="gray")
         self.optional_data_entry.pack(anchor="center", padx=30, fill='x')
-
+        
+        self.icon_label = ctk.CTkLabel(self.entry_frame, text="Enter the project's icon path (preferably .png):", font=("", 16))
+        self.icon_label.pack(anchor="center", padx=20)
+        self.icon_entry_var = ctk.StringVar(value='')
+        self.icon_entry = ctk.CTkEntry(self.entry_frame, placeholder_text="Leave empty if there's no icon", placeholder_text_color="gray", textvariable=self.icon_entry_var)
+        self.icon_entry.pack(anchor="center", padx=30, fill='x')
+        
+        self.icon_search = ctk.CTkButton(self.entry_frame, text="🔎 Search icon", font=("", 15), command=self.get_icon_directory)
+        self.icon_search.pack(anchor="center", pady=(2,10))
+        
         self.build_button = ctk.CTkButton(self, text="Build AppImage", font=("", 20), command=self.build_appimage)
         self.build_button.grid(row=3, columnspan=3, sticky="ew", padx=100)
 
@@ -106,6 +116,18 @@ class MainWindow(ctk.CTkToplevel):
             err_msg(master=self, text="Error: Invalid path.")
             return
 
+    def get_icon_directory(self):
+        self.pre_icon_directory = ctk.filedialog.askopenfilename(title="Icon file selection", filetypes=(("PNG files", "*.png"), ("ICO files", "*.ico"), ("All files", "*")))
+        if not self.pre_icon_directory:
+            return
+        
+        if os.path.exists(self.pre_icon_directory):
+            self.icon_directory = self.pre_icon_directory
+            self.icon_entry_var.set(self.icon_directory)
+        else:
+            err_msg(master=self, text="Error: Invalid icon path.")
+            return
+
     def is_dependent(self):
         if self.dependencies_entry.get():
             return True
@@ -114,6 +136,12 @@ class MainWindow(ctk.CTkToplevel):
         
     def is_optional_dependent(self):
         if self.optional_data_entry.get():
+            return True
+        else:
+            return False
+        
+    def has_icon(self):
+        if self.icon_entry.get():
             return True
         else:
             return False
@@ -142,6 +170,11 @@ class MainWindow(ctk.CTkToplevel):
         if self.is_optional_dependent():
             self.optional_dependencies = self.get_imports(self.optional_data_entry)
 
+        if self.has_icon():
+            if not os.path.exists(self.icon_directory):
+                err_msg(master=self, text="Error: Invalid icon path.")
+                return
+        
         self.new_venv_name = 'build-venv'
         if os.path.exists(self.new_venv_name):
             self.new_venv_name = 'appimage-build-venv'
@@ -174,12 +207,16 @@ class MainWindow(ctk.CTkToplevel):
             for dependency in self.enabled_dependencies:
                 self.nuitka_parts.append(f'--include-package-data={dependency}')
         
+        if self.has_icon:
+            self.nuitka_parts.append(f'--linux-onefile-icon={self.icon_directory}')
+            self.nuitka_parts.append(f'--include-data-files={os.path.dirname(self.icon_directory)}={os.path.basename(self.icon_directory)}')
+        
         self.nuitka_parts.append(self.file_name)
         
         print(self.nuitka_parts)
         
 # Current step: Build with a compiler as a standalone folder(in this case: nuitka):
-# python3 -m nuitka --include-package-data=optional-data --include-package-data=customtkinter --linux-onefile-icon=optional-icon.png --include-data-files=icon.png=optional-icon.format=optional-icon.format --output-dir=dist --output-filename="AppName"
+# python3 -m nuitka --linux-onefile-icon=icon.png --include-data-files=icon.png=icon.png --output-dir=dist --output-filename="AppName"
 # (--include-package-data is important for a bunch of libraries)
         
 if __name__ == "__main__":
