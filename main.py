@@ -73,7 +73,6 @@ class MainWindow(ctk.CTkToplevel):
         self.entry_frame = ctk.CTkFrame(self, fg_color="transparent")
         self.entry_frame.grid(row=2, columnspan=3, sticky="nsew")
         
-        # --output-filename="AppName"
         self.name_label = ctk.CTkLabel(self.entry_frame, text="Enter your project's name (optional):", font=("", 16))
         self.name_label.pack(anchor="center", padx=20)
         self.name_entry_var = ctk.StringVar(value='')
@@ -130,6 +129,12 @@ class MainWindow(ctk.CTkToplevel):
         else:
             err_msg(master=self, text="Error: Invalid path")
             return
+
+    def dir_has_appimagetool(self, dir):
+        for file in os.listdir(dir):
+            if file.startswith("appimagetool"):
+                return True
+        return False
 
     def get_directory(self):
         self.pre_directory = ctk.filedialog.askopenfilename(title="Main python file selection", filetypes=(("Python files", "*.py"), ("All files", "*.*")))
@@ -265,14 +270,10 @@ class MainWindow(ctk.CTkToplevel):
         
         if self.has_name():
             self.nuitka_parts.append(f'--output-filename="{self.name_entry_var.get()}"')
-        else:
-            self.nuitka_parts.append(f'--output-filename="{self.file_name}"')
         
         self.nuitka_parts.append(self.file_name)
         
         print(self.nuitka_parts)
-        
-
         
 if __name__ == "__main__":
     main()  
