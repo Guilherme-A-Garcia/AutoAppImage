@@ -272,9 +272,7 @@ class MainWindow(ctk.CTkToplevel):
         
         print(self.nuitka_parts)
         
-# Current step: Build with a compiler as a standalone folder(in this case: nuitka):
-# --output-filename="AppName"
-# (--include-package-data is important for a bunch of libraries)
+
         
 if __name__ == "__main__":
     main()  
