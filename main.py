@@ -84,33 +84,53 @@ class MainWindow(ctk.CTkToplevel):
         
         self.dependencies_label = ctk.CTkLabel(self.entry_frame, text="Enter your project's imports (separated by commas):", font=("", 16))
         self.dependencies_label.pack(anchor="center", padx=20)
-        self.dependencies_entry = ctk.CTkEntry(self.entry_frame, placeholder_text="Leave empty if third-party dependencies aren't needed", placeholder_text_color="gray")
-        self.dependencies_entry.pack(anchor="center", padx=30, fill='x')
+        self.dependencies_entry = ctk.CTkEntry(self.entry_frame, placeholder_text="Leave this empty if third-party dependencies aren't needed", placeholder_text_color="gray")
+        self.dependencies_entry.pack(anchor="center", padx=30, fill='x', pady=(2,10))
         
         self.optional_data_label = ctk.CTkLabel(self.entry_frame, text="Include optional package data (separated by commas):", font=("", 16))
         self.optional_data_label.pack(anchor="center", padx=20)
         self.optional_data_entry = ctk.CTkEntry(self.entry_frame, placeholder_text="Only include dependencies that need data detection (e.g.: customtkinter)", placeholder_text_color="gray")
-        self.optional_data_entry.pack(anchor="center", padx=30, fill='x')
+        self.optional_data_entry.pack(anchor="center", padx=30, fill='x', pady=(2,10))
         
-        self.icon_label = ctk.CTkLabel(self.entry_frame, text="Enter the project's icon path (preferably .png):", font=("", 16))
+        self.icon_label = ctk.CTkLabel(self.entry_frame, text="Enter the project's icon path (optinal, preferably .png):", font=("", 16))
         self.icon_label.pack(anchor="center", padx=20)
         self.icon_entry_var = ctk.StringVar(value='')
-        self.icon_entry = ctk.CTkEntry(self.entry_frame, placeholder_text="Leave empty if there's no icon", placeholder_text_color="gray", textvariable=self.icon_entry_var)
+        self.icon_entry = ctk.CTkEntry(self.entry_frame, textvariable=self.icon_entry_var)
         self.icon_entry.pack(anchor="center", padx=30, fill='x')
         
         self.icon_search = ctk.CTkButton(self.entry_frame, text="🔎 Search icon", font=("", 15), command=self.get_icon_directory)
         self.icon_search.pack(anchor="center", pady=(2,10))
         
+        self.extra_optional_label = ctk.CTkLabel(self.entry_frame, text="Include package data path (optional, separated by commas):", font=("", 16))
+        self.extra_optional_label.pack(anchor="center", padx=20)
+        self.extra_optional_entry_var = ctk.StringVar(value='')
+        self.extra_optional_entry = ctk.CTkEntry(self.entry_frame, textvariable=self.extra_optional_entry_var)
+        self.extra_optional_entry.pack(anchor="center", padx=30, fill='x')
+        
+        self.extra_optional_search = ctk.CTkButton(self.entry_frame, text="🔎 Search folder", font=("", 15), command=self.get_extra_dependencies)
+        self.extra_optional_search.pack(anchor="center", pady=(2,10))
+        
         self.build_button = ctk.CTkButton(self, text="Build AppImage", font=("", 20), command=self.build_appimage)
         self.build_button.grid(row=3, columnspan=3, sticky="ew", padx=100)
 
+    def get_extra_dependencies(self):
+        self.pre_extra_directory = ctk.filedialog.askdirectory(title="Extra dependency path selection")
+        if not self.pre_extra_directory:
+            return
+
+        if os.path.exists(self.pre_extra_directory):
+            self.extra_optional_entry_var.set(self.extra_optional_entry_var.get() + self.pre_extra_directory)
+        else:
+            err_msg(master=self, text="Error: Invalid path")
+            return
+
     def get_directory(self):
-        self.new_directory = ctk.filedialog.askopenfilename(title="Main python file selection", filetypes=(("Python files", "*.py"), ("All files", "*.*")))
-        if not self.new_directory:
+        self.pre_directory = ctk.filedialog.askopenfilename(title="Main python file selection", filetypes=(("Python files", "*.py"), ("All files", "*.*")))
+        if not self.pre_directory:
             return
         
-        if os.path.exists(self.new_directory):
-            self.file_directory = self.new_directory
+        if os.path.exists(self.pre_directory):
+            self.file_directory = self.pre_directory
             self.directory_entry_var.set(self.file_directory)
         else:
             err_msg(master=self, text="Error: Invalid path.")
@@ -145,7 +165,13 @@ class MainWindow(ctk.CTkToplevel):
             return True
         else:
             return False
-
+    
+    def has_extra_optional(self):
+        if self.extra_optional_entry_var.get() != '':
+            return True
+        else:
+            return False
+    
     def get_imports(self, widget):
         # I hate list comprehension but oh well
         self.cleaned = [dep.strip() for dep in widget.get().split(",") if dep.strip()]
@@ -169,6 +195,9 @@ class MainWindow(ctk.CTkToplevel):
         
         if self.is_optional_dependent():
             self.optional_dependencies = self.get_imports(self.optional_data_entry)
+        
+        if self.has_extra_optional():
+            self.extra_optional_dependencies = self.get_imports(self.extra_optional_entry_var)
 
         if self.has_icon():
             if not os.path.exists(self.icon_directory):
@@ -207,6 +236,14 @@ class MainWindow(ctk.CTkToplevel):
             for dependency in self.enabled_dependencies:
                 self.nuitka_parts.append(f'--include-package-data={dependency}')
         
+        if self.has_extra_optional():
+            self.extra_deps = set()
+            for dep in self.extra_optional_dependencies:
+                self.extra_deps.add(dep)
+
+            for dep in self.extra_deps:
+                self.nuitka_parts.append(f'--include-data-files={dep}')
+        
         if self.has_icon:
             self.nuitka_parts.append(f'--linux-onefile-icon={self.icon_directory}')
             self.nuitka_parts.append(f'--include-data-files={os.path.dirname(self.icon_directory)}={os.path.basename(self.icon_directory)}')
@@ -216,7 +253,7 @@ class MainWindow(ctk.CTkToplevel):
         print(self.nuitka_parts)
         
 # Current step: Build with a compiler as a standalone folder(in this case: nuitka):
-# python3 -m nuitka --linux-onefile-icon=icon.png --include-data-files=icon.png=icon.png --output-dir=dist --output-filename="AppName"
+# --output-filename="AppName"
 # (--include-package-data is important for a bunch of libraries)
         
 if __name__ == "__main__":
