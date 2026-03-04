@@ -42,6 +42,8 @@ class MainWindow(ctk.CTkToplevel):
     def __init__(self, app):
         super().__init__(app.root)
         self.app = app
+        self.file_directory = None
+        self.project_directory = None
         self.imports = []
         self.nuitka_plugins = {'gevent': ('gevent',), 'glfw': ('glfw',), 'multiprocessing': ('multiprocessing',),
                         'numpy': ('numpy', 'scipy', 'pandas', 'matplotlib'), 'pmw-freezer': ('Pmw',), 'pyqt5': ('PyQt5',),
@@ -70,32 +72,36 @@ class MainWindow(ctk.CTkToplevel):
         self.entry_frame = ctk.CTkFrame(self, fg_color="transparent")
         self.entry_frame.grid(row=2, columnspan=3, sticky="nsew")
         
-        self.directory_label = ctk.CTkLabel(self.entry_frame, text="Enter your project directory:", font=("", 16))
+        self.directory_label = ctk.CTkLabel(self.entry_frame, text="Enter your main .py file path:", font=("", 16))
         self.directory_label.pack(anchor="center", padx=20)
-        
         self.directory_entry_var = ctk.StringVar(value='')
         self.directory_entry = ctk.CTkEntry(self.entry_frame, textvariable=self.directory_entry_var)
         self.directory_entry.pack(anchor="center", padx=30, fill='x')
         
-        self.directory_search = ctk.CTkButton(self.entry_frame, text="🔎 Search directory", font=("", 15), command=self.get_directory)
+        self.directory_search = ctk.CTkButton(self.entry_frame, text="🔎 Search file", font=("", 15), command=self.get_directory)
         self.directory_search.pack(anchor="center", pady=(2,10))
         
         self.dependencies_label = ctk.CTkLabel(self.entry_frame, text="Enter your project's imports (separated by commas):", font=("", 16))
         self.dependencies_label.pack(anchor="center", padx=20)
-        self.dependencies_entry = ctk.CTkEntry(self.entry_frame, placeholder_text="Leave empty if third-party dependencies aren't needed.", placeholder_text_color="gray")
+        self.dependencies_entry = ctk.CTkEntry(self.entry_frame, placeholder_text="Leave empty if third-party dependencies aren't needed", placeholder_text_color="gray")
         self.dependencies_entry.pack(anchor="center", padx=30, fill='x')
+        
+        self.optional_data_label = ctk.CTkLabel(self.entry_frame, text="Include optional package data (separated by commas):", font=("", 16))
+        self.optional_data_label.pack(anchor="center", padx=20)
+        self.optional_data_entry = ctk.CTkEntry(self.entry_frame, placeholder_text="Only include dependencies that need data detection (e.g.: customtkinter)", placeholder_text_color="gray")
+        self.optional_data_entry.pack(anchor="center", padx=30, fill='x')
 
         self.build_button = ctk.CTkButton(self, text="Build AppImage", font=("", 20), command=self.build_appimage)
         self.build_button.grid(row=3, columnspan=3, sticky="ew", padx=100)
 
     def get_directory(self):
-        self.new_directory = ctk.filedialog.askdirectory(title="Directory selection")
+        self.new_directory = ctk.filedialog.askopenfilename(title="Main python file selection", filetypes=(("Python files", "*.py"), ("All files", "*.*")))
         if not self.new_directory:
             return
         
         if os.path.exists(self.new_directory):
-            self.directory = self.new_directory
-            self.directory_entry_var.set(self.directory)
+            self.file_directory = self.new_directory
+            self.directory_entry_var.set(self.file_directory)
         else:
             err_msg(master=self, text="Error: Invalid path.")
             return
@@ -105,10 +111,16 @@ class MainWindow(ctk.CTkToplevel):
             return True
         else:
             return False
+        
+    def is_optional_dependent(self):
+        if self.optional_data_entry.get():
+            return True
+        else:
+            return False
 
-    def get_imports(self):
+    def get_imports(self, widget):
         # I hate list comprehension but oh well
-        self.cleaned = [dep.strip() for dep in self.dependencies_entry.get().split(",") if dep.strip()]
+        self.cleaned = [dep.strip() for dep in widget.get().split(",") if dep.strip()]
         return self.cleaned
 
     def build_appimage(self):
@@ -118,24 +130,27 @@ class MainWindow(ctk.CTkToplevel):
                 err_msg(master=self, text="Error: Please fill all required entries.")
                 return
         
-        self.project_directory = self.directory_entry.get().strip()  # CWD var <-----------
+        self.temp_path = self.directory_entry_var.get().strip()
+        self.project_directory = os.path.dirname(self.temp_path) # CWD var <-----------
         if not os.path.exists(self.project_directory):
             err_msg(master=self, text="Error: The project directory you provided is invalid.")
             return
 
         if self.is_dependent():
-            self.imports = self.get_imports()
+            self.imports = self.get_imports(self.dependencies_entry)
+        
+        if self.is_optional_dependent():
+            self.optional_dependencies = self.get_imports(self.optional_data_entry)
 
         self.new_venv_name = 'build-venv'
-        self.venv_directory = os.path.join(self.project_directory, self.new_venv_name)
-        self.venv_creation = ['python', '-m', 'venv', self.venv_directory]
-
         if os.path.exists(self.new_venv_name):
             self.new_venv_name = 'appimage-build-venv'
-            self.venv_creation[-1] = self.new_venv_name
         
+        self.venv_directory = os.path.join(self.project_directory, self.new_venv_name)
+        self.venv_creation = ['python', '-m', 'venv', self.venv_directory]
         self.venv_python = os.path.join(self.venv_directory, 'bin', 'python')
         self.venv_pip = os.path.join(self.venv_directory, 'bin', 'pip')
+        self.file_name = os.path.basename(self.file_directory)
         
         self.install_libraries = [self.venv_pip, 'install', 'nuitka', *self.imports]
         
@@ -150,11 +165,21 @@ class MainWindow(ctk.CTkToplevel):
             
             for plugin in self.enabled_plugins:
                 self.nuitka_parts.append(f'--enable-plugin={plugin}')
-                
-        # make optional enable-plugin field
+        
+        if self.is_optional_dependent():
+            self.enabled_dependencies = set()
+            for dependency in self.optional_dependencies:
+                self.enabled_dependencies.add(dependency)
+            
+            for dependency in self.enabled_dependencies:
+                self.nuitka_parts.append(f'--include-package-data={dependency}')
+        
+        self.nuitka_parts.append(self.file_name)
+        
+        print(self.nuitka_parts)
         
 # Current step: Build with a compiler as a standalone folder(in this case: nuitka):
-# python3 -m nuitka --standalone --remove-output --enable-plugin=plugin-name --include-package-data=optional-data --include-package-data=customtkinter --linux-onefile-icon=optional-icon.png --include-data-files=icon.png=optional-icon.format=optional-icon.format --output-dir=dist --output-filename="AppName" app_name.py
+# python3 -m nuitka --include-package-data=optional-data --include-package-data=customtkinter --linux-onefile-icon=optional-icon.png --include-data-files=icon.png=optional-icon.format=optional-icon.format --output-dir=dist --output-filename="AppName"
 # (--include-package-data is important for a bunch of libraries)
         
 if __name__ == "__main__":
