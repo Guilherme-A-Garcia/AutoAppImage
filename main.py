@@ -299,10 +299,12 @@ class MainWindow(ctk.CTkToplevel):
             self.dist_to_AppDir = ['cp', '-r', f'dist/{self.processed_file_name}.dist/*', 'AppDir/usr/bin/']
         
         if self.has_icon():
-            self.icon_name = os.path.basename(self.icon_directory)
-            self.cp_icon = ['cp', self.icon_directory, f'AppDir/usr/share/icons/hicolor/{self.icon_size}/apps/{self.icon_name}']
-            self.cp_icon_base = ['cp', self.icon_directory, f'AppDir/{self.icon_name}']
+            self.icon_name = os.path.splitext(os.path.basename(self.icon_directory))
+            self.cp_icon = ['cp', self.icon_directory, f'AppDir/usr/share/icons/hicolor/{self.icon_size}/apps/{self.name_entry_var.get()}{self.icon_name[1]}']
+            self.cp_icon_base = ['cp', self.icon_directory, f'AppDir/{self.name_entry_var.get()}{self.icon_name[1]}']
         
+        # self.create_desktop_file(processed_name=None)
+      
         # Next up: Create a .desktop file inside AppDir with the following:
         # [Desktop Entry]
         # Type=Application
