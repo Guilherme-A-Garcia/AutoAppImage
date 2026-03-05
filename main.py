@@ -198,6 +198,40 @@ class MainWindow(ctk.CTkToplevel):
         # I hate list comprehension but oh well
         self.cleaned = [dep.strip() for dep in widget.get().split(",") if dep.strip()]
         return self.cleaned
+    
+    def cleanup():
+        if self.project_directory != '':
+            if os.path.exists(f'{self.project_directory}/AppDir/'):
+                subprocess.run(['rm', '-rf', 'Appdir/'], cwd=self.project_directory)
+            
+            if os.path.exists(f'{self.project_directory}/build/'):
+                subprocess.run(['rm', '-rf', 'build/'], cwd=self.project_directory)
+                
+            if os.path.exists(f'{self.project_directory}/dist/'):
+                subprocess.run(['rm', '-rf', 'dist/'], cwd=self.project_directory)
+
+    def create_desktop_file(self, project_name):
+        if os.path.exits(f'{self.project_directory}/AppDir'):
+            if not os.path.exists(f'{self.project_directory}/AppDir/{project_name}.desktop'):
+                with open(f'{project_name}.desktop', 'w') as file:
+                    file.write("#[Desktop Entry]\n")
+                    file.write("Type=Application\n")
+                    file.write(f"Name={project_name}\n")
+                    file.write(f"Exec={project_name}\n")
+                    file.write(f"Icon={project_name}\n")
+                    file.write("Categories=Utility;\n")
+                    file.write("Comment=\n")
+                    file.write("Terminal=false\n")
+                    file.write(f"StartupWMClass={project_name}\n")
+                    file.close()
+            else:
+                err_msg(master=self, text="Error: a .desktop file already exists! Aborting...")
+                self.cleanup()
+                return
+        else:
+            err_msg(master=self, text='Error: AppDir does not exist! Aborting...')
+            self.cleanup()
+            return
 
     def build_appimage(self):
         fields = (self.directory_entry,)
@@ -279,8 +313,8 @@ class MainWindow(ctk.CTkToplevel):
         if self.has_name():
             self.nuitka_parts.append(f'--output-filename="{self.name_entry_var.get()}"')
         else:
-            self.processed_file_name = os.path.splitext(self.file_name)[0]
-            self.nuitka_parts.append(f'--output-filename="{self.processed_file_name}"')
+            self.processed_file_name = os.path.splitext(self.file_name)
+            self.nuitka_parts.append(f'--output-filename="{self.processed_file_name[0]}"')
         
         self.nuitka_parts.append(self.file_name)
         
@@ -296,25 +330,18 @@ class MainWindow(ctk.CTkToplevel):
         if self.has_name():
             self.dist_to_AppDir = ['cp', '-r', f'dist/{self.name_entry_var.get()}.dist/*', 'AppDir/usr/bin/']
         else:
-            self.dist_to_AppDir = ['cp', '-r', f'dist/{self.processed_file_name}.dist/*', 'AppDir/usr/bin/']
+            self.dist_to_AppDir = ['cp', '-r', f'dist/{self.processed_file_name[0]}.dist/*', 'AppDir/usr/bin/']
         
         if self.has_icon():
             self.icon_name = os.path.splitext(os.path.basename(self.icon_directory))
             self.cp_icon = ['cp', self.icon_directory, f'AppDir/usr/share/icons/hicolor/{self.icon_size}/apps/{self.name_entry_var.get()}{self.icon_name[1]}']
             self.cp_icon_base = ['cp', self.icon_directory, f'AppDir/{self.name_entry_var.get()}{self.icon_name[1]}']
         
-        # self.create_desktop_file(processed_name=None)
-      
-        # Next up: Create a .desktop file inside AppDir with the following:
-        # [Desktop Entry]
-        # Type=Application
-        # Name=AppName
-        # Exec=AppName
-        # Icon=AppName
-        # Categories=Utility;
-        # Comment=enter a comment
-        # Terminal=false
-        # StartupWMClass=AppName
+        # if self.has_name():
+        #     self.create_desktop_file(self.name_entry_var.get())
+        # else:
+        #     self.create_desktop_file(self.processed_file_name[0])
+        
 
 if __name__ == "__main__":
     main()  
