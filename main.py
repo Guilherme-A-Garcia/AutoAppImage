@@ -278,6 +278,9 @@ class MainWindow(ctk.CTkToplevel):
         
         if self.has_name():
             self.nuitka_parts.append(f'--output-filename="{self.name_entry_var.get()}"')
+        else:
+            self.processed_file_name = os.path.splitext(self.file_name)[0]
+            self.nuitka_parts.append(f'--output-filename="{self.processed_file_name}"')
         
         self.nuitka_parts.append(self.file_name)
         
@@ -292,9 +295,21 @@ class MainWindow(ctk.CTkToplevel):
         self.AppDir2 = ['mkdir', 'p', f'AppDir/usr/share/icons/hicolor/{self.icon_size}/apps']
         self.AppDir3 = ['mkdir', 'p', 'AppDir/usr/share/applications']
         
-        # Next up: Copy everything from .dist into AppDir:
-        # cp -r dist/AppName.dist/* AppDir/usr/bin/
-        # mv AppDir/usr/bin/AppName AppDir/usr/bin/AppName
+        if self.has_name():
+            self.dist_to_AppDir = ['cp', '-r', f'dist/{self.name_entry_var.get()}.dist/*', 'AppDir/usr/bin/']
+        else:
+            self.dist_to_AppDir = ['cp', '-r', f'dist/{self.processed_file_name}.dist/*', 'AppDir/usr/bin/']
+            
+        # Next up: Create a .desktop file inside AppDir with the following:
+        # [Desktop Entry]
+        # Type=Application
+        # Name=AppName
+        # Exec=AppName
+        # Icon=AppName
+        # Categories=Utility;
+        # Comment=enter a comment
+        # Terminal=false
+        # StartupWMClass=AppName
 
 if __name__ == "__main__":
     main()  
