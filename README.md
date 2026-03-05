@@ -33,7 +33,7 @@ Otherwise, you will not need to download anything, as AutoAppImage downloads and
 
 ## How to Use
 1. Download the latest release of this project;
-2. Give the .AppImage executable permissions with `chmod +x` and open it;
+2. Give the .AppImage executable permissions with `chmod +xw` and open it;
 3. Fill the required fields;
 4. Click "Build AppImage;"
 5. Wait for the process to end and enjoy the .AppImage!
