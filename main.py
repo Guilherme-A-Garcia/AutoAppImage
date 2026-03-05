@@ -329,8 +329,10 @@ class MainWindow(ctk.CTkToplevel):
         
         if self.has_name():
             self.dist_to_AppDir = ['cp', '-r', f'dist/{self.name_entry_var.get()}.dist/*', 'AppDir/usr/bin/']
+            self.AppRun = ['ln', '-s', f'usr/bin/{self.name_entry_var.get()}', 'AppDir/AppRun']
         else:
             self.dist_to_AppDir = ['cp', '-r', f'dist/{self.processed_file_name[0]}.dist/*', 'AppDir/usr/bin/']
+            self.AppRun = ['ln', '-s', f'usr/bin/{self.processed_file_name[0]}', 'AppDir/AppRun']
         
         if self.has_icon():
             self.icon_name = os.path.splitext(os.path.basename(self.icon_directory))
