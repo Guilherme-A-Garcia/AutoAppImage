@@ -1,5 +1,6 @@
 import os
 import sys
+from PIL import Image
 import subprocess
 import customtkinter as ctk
 from CTkMessagebox import CTkMessagebox
@@ -224,6 +225,10 @@ class MainWindow(ctk.CTkToplevel):
             if not os.path.exists(self.icon_directory):
                 err_msg(master=self, text="Error: Invalid icon path.")
                 return
+            else:
+                self.icon_image = Image.open(self.icon_directory)
+                self.icon_width, self.icon_height = self.icon_image.size
+                self.icon_size = f'{self.icon_width}x{self.icon_height}'
         
         self.new_venv_name = 'build-venv'
         if os.path.exists(self.new_venv_name):
@@ -283,10 +288,13 @@ class MainWindow(ctk.CTkToplevel):
         self.download_appimagetool = ['wget', self.appimagetool_link]
         # os.chmod(file, os.stat(file).st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
         
-        # Next up: Set up AppDir and the correct structure to later be squashed with the ELF into AppImage:
-        # mkdir -p AppDir/usr/bin
-        # mkdir -p AppDir/usr/share/icons/hicolor/256x256/apps
-        # mkdir -p AppDir/usr/share/applications
+        self.AppDir1 = ['mkdir', 'p', 'AppDir/usr/bin']
+        self.AppDir2 = ['mkdir', 'p', f'AppDir/usr/share/icons/hicolor/{self.icon_size}/apps']
+        self.AppDir3 = ['mkdir', 'p', 'AppDir/usr/share/applications']
+        
+        # Next up: Copy everything from .dist into AppDir:
+        # cp -r dist/AppName.dist/* AppDir/usr/bin/
+        # mv AppDir/usr/bin/AppName AppDir/usr/bin/AppName
 
 if __name__ == "__main__":
     main()  
