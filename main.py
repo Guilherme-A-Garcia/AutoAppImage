@@ -116,6 +116,9 @@ class MainWindow(ctk.CTkToplevel):
         self.extra_optional_search = ctk.CTkButton(self.entry_frame, text="🔎 Search folder", font=("", 15), command=self.get_extra_dependencies)
         self.extra_optional_search.pack(anchor="center", pady=(2,10))
         
+        self.build_button_separator = ctk.CTkFrame(self.entry_frame, height=1, fg_color="gray", bg_color="gray")
+        self.build_button_separator.pack(fill='x', pady=(5,0))
+        
         self.build_button = ctk.CTkButton(self, text="Build AppImage", font=("", 20), command=self.build_appimage)
         self.build_button.grid(row=3, columnspan=3, sticky="ew", padx=100, pady=20)
 
@@ -275,5 +278,15 @@ class MainWindow(ctk.CTkToplevel):
         
         print(self.nuitka_parts)
         
+        # if not self.dir_has_appimagetool(self.project_directory) when creating subprocess
+        self.appimagetool_link = 'https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage'
+        self.download_appimagetool = ['wget', self.appimagetool_link]
+        # os.chmod(file, os.stat(file).st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
+        
+        # Next up: Set up AppDir and the correct structure to later be squashed with the ELF into AppImage:
+        # mkdir -p AppDir/usr/bin
+        # mkdir -p AppDir/usr/share/icons/hicolor/256x256/apps
+        # mkdir -p AppDir/usr/share/applications
+
 if __name__ == "__main__":
     main()  
