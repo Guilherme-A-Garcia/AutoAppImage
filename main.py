@@ -199,7 +199,7 @@ class MainWindow(ctk.CTkToplevel):
         self.cleaned = [dep.strip() for dep in widget.get().split(",") if dep.strip()]
         return self.cleaned
     
-    def cleanup():
+    def cleanup(self):
         if self.project_directory != '':
             if os.path.exists(f'{self.project_directory}/AppDir/'):
                 subprocess.run(['rm', '-rf', 'Appdir/'], cwd=self.project_directory)
