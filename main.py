@@ -211,7 +211,7 @@ class MainWindow(ctk.CTkToplevel):
                 subprocess.run(['rm', '-rf', 'dist/'], cwd=self.project_directory)
 
     def create_desktop_file(self, project_name):
-        if os.path.exits(f'{self.project_directory}/AppDir'):
+        if os.path.exists(f'{self.project_directory}/AppDir'):
             if not os.path.exists(f'{self.project_directory}/AppDir/{project_name}.desktop'):
                 with open(f'{project_name}.desktop', 'w') as file:
                     file.write("#[Desktop Entry]\n")
