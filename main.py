@@ -370,7 +370,7 @@ class MainWindow(ctk.CTkToplevel):
             self.icon_name = os.path.splitext(os.path.basename(self.icon_directory))
             self.commands["cp_icon"] = ['cp', self.icon_directory, f'AppDir/usr/share/icons/hicolor/{self.icon_size}/apps/{self.final_name}{self.icon_name[1]}']
             self.commands["cp_icon_base"] = ['cp', self.icon_directory, f'AppDir/{self.final_name}{self.icon_name[1]}']
-            self.commands["dir_icon"] = ['ln', '-s', self.icon_directory, 'AppDir/.DirIcon']
+            self.commands["dir_icon"] = ['ln', '-s', f'AppDir/usr/share/icons/hicolor/{self.icon_size}/apps/{self.final_name}{self.icon_name[1]}', 'AppDir/.DirIcon']
         
         self.build_thread(commands=self.commands, directory=self.project_directory, processed_file_name=self.final_name)
         
