@@ -141,7 +141,7 @@ class MainWindow(ctk.CTkToplevel):
             
         
     def enable_progress_bar(self):
-        self.progress_bar.grid()
+        self.progress_bar.grid(row=3, columnspan=3, sticky='ew', padx=100, pady=10)
         self.progress_bar.start()
     
     def disable_progress_bar(self):
@@ -229,18 +229,20 @@ class MainWindow(ctk.CTkToplevel):
                 
             if os.path.exists(f'{self.project_directory}/dist/'):
                 subprocess.run(['rm', '-rf', 'dist/'], cwd=self.project_directory)
+            
+            if os.path.exists(f'{self.project_directory}/{self.new_venv_name}/'):
+                subprocess.run(['rm', '-rf', f'{self.new_venv_name}/'], cwd=self.project_directory)
 
     def create_desktop_file(self, project_name):
         if os.path.exists(f'{self.project_directory}/AppDir'):
             if not os.path.exists(f'{self.project_directory}/AppDir/{project_name}.desktop'):
                 with open(f'{self.project_directory}/AppDir/{project_name}.desktop', 'w') as file:
-                    file.write("#[Desktop Entry]\n")
+                    file.write("[Desktop Entry]\n")
                     file.write("Type=Application\n")
                     file.write(f"Name={project_name}\n")
                     file.write(f"Exec={project_name}\n")
                     file.write(f"Icon={project_name}\n")
                     file.write("Categories=Utility;\n")
-                    # file.write("Comment=\n")
                     file.write("Terminal=false\n")
                     file.write(f"StartupWMClass={project_name}\n")
                     file.close()
@@ -267,23 +269,39 @@ class MainWindow(ctk.CTkToplevel):
             "AppDir1": [],
             "AppDir2": [],
             "AppDir3": [],
+            "rename_dist": [],
             "dist_to_AppDir": [],
             "AppRun": [],
             "cp_icon": [],
             "cp_icon_base": [],
             "dir_icon": [],
             "download_appimagetool": [],
-            "make_appimage": [],
         }
         
         self.temp_path = self.directory_entry_var.get().strip()
-        self.project_directory = os.path.dirname(self.temp_path) # CWD var <-----------
+        self.project_directory = os.path.dirname(self.temp_path)
         if not os.path.exists(self.project_directory):
             err_msg(master=self, text="Error: The project directory you provided is invalid.")
             return
 
         if self.is_dependent():
-            self.imports = self.get_imports(self.dependencies_entry)
+            self.standard_libs = [
+                "sys", "os", "pathlib", "platform",
+                "math", "cmath", "statistics", "random", "decimal", "fractions", "datetime", "time", "zoneinfo", "calendar",
+                "re", "string", "textwrap", "difflib", "itertools", "functools", "operator", "collections", "heapq", "bisect",
+                "types", "typing", "enum", "dataclasses", "json", "csv", "configparser", "plistlib",
+                "pickle", "shelve", "marshal", "dbm", "sqlite3", "hashlib", "hmac", "secrets", "ssl",
+                "base64", "binascii", "zlib", "gzip", "bz2", "lzma", "zipfile", "tarfile",
+                "argparse", "getopt", "getpass", "cmd", "shlex", "subprocess", "threading", "multiprocessing", "concurrent", "asyncio",
+                "signal", "queue", "sched", "contextlib", "logging", "warnings", "traceback", "pprint", "inspect", "importlib", "pkgutil", "site",
+                "unittest", "doctest", "timeit", "profile", "cProfile", "trace", "socket", "selectors", "asyncore", "asynchat",
+                "http", "urllib", "ftplib", "smtplib", "imaplib", "poplib", "nntplib","email", "mailbox", "mimetypes",
+                "html", "xml", "xmlrpc", "tkinter", "turtle", "tempfile", "glob", "fnmatch", "shutil", "filecmp", "stat"]
+            
+            self.pre_imports = self.get_imports(self.dependencies_entry)
+            for imp in self.pre_imports:
+                if imp not in self.standard_libs:
+                    self.imports.append(imp)
         
         if self.is_optional_dependent():
             self.optional_dependencies = self.get_imports(self.optional_data_entry)
@@ -347,11 +365,14 @@ class MainWindow(ctk.CTkToplevel):
                 self.extra_deps.add(dep)
 
             for dep in self.extra_deps:
-                self.commands["nuitka_parts"].append(f'--include-data-files={dep}')
+                self.dep_name = os.path.basename(dep)
+                self.commands["nuitka_parts"].append(f'--include-data-dir={dep}={self.dep_name}')
         
         if self.has_icon():
-            self.commands["nuitka_parts"].append(f'--linux-onefile-icon={self.icon_directory}')
-            self.commands["nuitka_parts"].append(f'--include-data-files={os.path.dirname(self.icon_directory)}={os.path.basename(self.icon_directory)}')
+            self.icon_folder = os.path.dirname(self.icon_directory)
+            self.icon_file = os.path.basename(self.icon_directory)
+            self.commands["nuitka_parts"].append(f'--linux-onefile-icon={self.icon_folder}/{self.icon_file}')
+            self.commands["nuitka_parts"].append(f'--include-data-files={self.icon_directory}={self.icon_file}')
         
         self.commands["nuitka_parts"].append(f'--output-filename={self.final_name}')
         
@@ -364,7 +385,9 @@ class MainWindow(ctk.CTkToplevel):
             self.commands["AppDir2"] = ['mkdir', '-p', f'AppDir/usr/share/icons/hicolor/256x256/apps']
         self.commands["AppDir3"] = ['mkdir', '-p', 'AppDir/usr/share/applications']
         
-        self.commands["dist_to_AppDir"] = ['cp', '-r', f'dist/{self.final_name}.dist/*', 'AppDir/usr/bin/']
+        self.commands["rename_dist"] = ['mv', f'dist/{os.path.splitext(self.file_name)[0]}.dist', f'dist/{self.final_name}.dist']
+        
+        self.commands["dist_to_AppDir"] = ['cp', '-r', f'dist/{self.final_name}.dist/.', 'AppDir/usr/bin/']
         self.commands["AppRun"] = ['ln', '-s', f'usr/bin/{self.final_name}', 'AppDir/AppRun']
         
         if self.has_icon():
@@ -422,42 +445,40 @@ class MainWindow(ctk.CTkToplevel):
             "AppDir1",
             "AppDir2",
             "AppDir3",
+            "rename_dist",
             "dist_to_AppDir",
             "AppRun",
             "cp_icon",
             "cp_icon_base",
             "dir_icon",
-            "download_appimagetool",
-            "make_appimage"]
+            "download_appimagetool",]
         
-        for cmd in self.cmd_order:
-            if cmd in commands and commands[cmd]:
-                try:
-                    if cmd == "dir_icon":
-                        self.process = subprocess.run(commands[cmd], cwd=directory, check=True)
-                        self.create_desktop_file(self.final_name)
-                        
-                    elif cmd == "download_appimagetool":
-                        if not self.dir_has_appimagetool(directory=directory):
+        try:
+            for cmd in self.cmd_order:
+                if cmd in commands and commands[cmd]:
+                        if cmd == "dir_icon":
                             self.process = subprocess.run(commands[cmd], cwd=directory, check=True)
-                            self.appimagetool = self.get_appimagetool_filename(directory=directory)
-                            self.tool_path = os.path.join(directory, self.appimagetool)
-                            os.chmod(self.tool_path, os.stat(self.tool_path).st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
-                        else:
-                            self.appimagetool = self.get_appimagetool_filename(directory=directory)
-                            self.tool_path = os.path.join(directory, self.appimagetool)
-                            os.chmod(self.tool_path, os.stat(self.tool_path).st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
-                    
-                    elif cmd == "make_appimage":
-                        self.process = subprocess.run([self.appimagetool, 'AppDir', f'{self.final_name}-{self.arch}.AppImage'], cwd=directory, env=self.env, check=True)
-                    
-                    else:                    
-                        self.process = subprocess.run(commands[cmd], cwd=directory, check=True)
+                            self.create_desktop_file(self.final_name)
+                            
+                        elif cmd == "download_appimagetool":
+                            if not self.dir_has_appimagetool(directory=directory):
+                                self.process = subprocess.run(commands[cmd], cwd=directory, check=True)
+                                self.tool_path = os.path.join(directory, self.get_appimagetool_filename(directory=directory))
+                                os.chmod(self.tool_path, os.stat(self.tool_path).st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
+                            else:
+                                self.tool_path = os.path.join(directory, self.get_appimagetool_filename(directory=directory))
+                                os.chmod(self.tool_path, os.stat(self.tool_path).st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
                         
-                except Exception as e:
-                    self.after(0, lambda: err_msg(master=self, text=f'An error has occurred: {e}'))
-                    self.cleanup()
-                    return
+                        else:                    
+                            self.process = subprocess.run(commands[cmd], cwd=directory, check=True)
+                            
+            self.tool = os.path.join(directory, self.get_appimagetool_filename(directory))
+            self.process = subprocess.run([self.tool, 'AppDir', f'{self.final_name}-{self.arch}.AppImage'], cwd=directory)
+                        
+        except Exception as e:
+            self.after(0, lambda e=e: err_msg(master=self, text=f'An error has occurred: {e}'))
+            self.cleanup()
+            return
                     
         if self.process.returncode == 0:
             self.after(0, lambda: self.success_msg(master=self))
