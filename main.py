@@ -132,6 +132,13 @@ class MainWindow(ctk.CTkToplevel):
         self.build_button.grid(row=4, columnspan=3, sticky="ew", padx=100, pady=(0,20))
         
         self.widgets = [self.name_entry, self.directory_entry, self.directory_search, self.dependencies_entry, self.optional_data_entry, self.icon_entry, self.icon_search, self.extra_optional_entry, self.extra_optional_search, self.build_button]
+    
+    def success_msg(self, master, option_1="No", option_2="Yes"):
+        msg = CTkMessagebox(master=self, message="AppImage successfully generated!\nWould you like to clean leftovers?", icon='check', title='Success', option_1=option_1, option_2=option_2)
+        if msg.get() == option_2:
+            self.cleanup
+        return
+            
         
     def enable_progress_bar(self):
         self.progress_bar.grid()
@@ -456,19 +463,14 @@ class MainWindow(ctk.CTkToplevel):
                     self.process = subprocess.run(commands[cmd], cwd=directory, check=True)
                         
                 except Exception as e:
-                    err_msg(master=self, text=f'An error has occurred: {e}')
+                    self.after(0, lambda: err_msg(master=self, text=f'An error has occurred: {e}'))
                     self.cleanup()
                     return
                     
         if self.process.returncode == 0:
-            self.success_msg = CTkMessagebox(master=self, message="AppImage successfully generated!\nWould you like to clean leftovers?", icon='check', title='Success', option_1='No', option_2='Yes')
-            if self.success_msg.get() == "Yes":
-                self.cleanup()
-                return
-            else:
-                return
+            self.after(0, lambda: self.success_msg(master=self))
         else:
-            err_msg(master=self, text=f"The subprocess has failed.\nReturn code: {self.process.returncode}")
+            self.after(0, err_msg(master=self, text=f"The subprocess has failed.\nReturn code: {self.process.returncode}"))
             self.cleanup()
             return
 
