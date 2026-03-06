@@ -1,7 +1,8 @@
 import os
 import sys
-from PIL import Image
 import subprocess
+import threading
+from PIL import Image
 import customtkinter as ctk
 from CTkMessagebox import CTkMessagebox
 
@@ -343,11 +344,26 @@ class MainWindow(ctk.CTkToplevel):
             self.commands["cp_icon_base"] = ['cp', self.icon_directory, f'AppDir/{self.name_entry_var.get()}{self.icon_name[1]}']
             self.commands["dir_icon"] = ['ln', '-s', self.icon_directory, 'AppDir/.DirIcon']
         
+        # self.build_thread(commands=self.commands)
+        
         # if self.has_name():
         #     self.create_desktop_file(self.name_entry_var.get())
         # else:
         #     self.create_desktop_file(self.processed_file_name[0])
         
+    def build_thread(self, commands):
+        
+        def check_thread():
+            if self.thread.is_alive():
+                self.after(200, check_thread)
+            else:
+                pass
+    
+        self.thread = threading.Thread(target=self.build_subprocess, args=(commands), daemon=True)
+        self.thread.start()
+        
+        check_thread()
+
 
 if __name__ == "__main__":
     main()  
