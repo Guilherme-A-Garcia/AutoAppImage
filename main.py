@@ -1,7 +1,9 @@
 import os
 import sys
-import subprocess
+import stat
+import platform
 import threading
+import subprocess
 from PIL import Image
 import customtkinter as ctk
 from CTkMessagebox import CTkMessagebox
@@ -135,8 +137,13 @@ class MainWindow(ctk.CTkToplevel):
             err_msg(master=self, text="Error: Invalid path")
             return
     
-    def dir_has_appimagetool(self, dir):
-        return any(file.startswith("appimagetool") for file in os.listdir(dir))
+    def dir_has_appimagetool(self, directory):
+        return any(file.startswith("appimagetool") for file in os.listdir(directory))
+    
+    def get_appimagetool_filename(self, directory):
+        for file in os.listdir(directory):
+            if file.startswith("appimagetool"):
+                return file
 
     def get_directory(self):
         self.pre_directory = ctk.filedialog.askopenfilename(title="Main python file selection", filetypes=(("Python files", "*.py"), ("All files", "*.*")))
@@ -196,14 +203,14 @@ class MainWindow(ctk.CTkToplevel):
     def create_desktop_file(self, project_name):
         if os.path.exists(f'{self.project_directory}/AppDir'):
             if not os.path.exists(f'{self.project_directory}/AppDir/{project_name}.desktop'):
-                with open(f'{project_name}.desktop', 'w') as file:
+                with open(f'{self.project_directory}/AppDir/{project_name}.desktop', 'w') as file:
                     file.write("#[Desktop Entry]\n")
                     file.write("Type=Application\n")
                     file.write(f"Name={project_name}\n")
                     file.write(f"Exec={project_name}\n")
                     file.write(f"Icon={project_name}\n")
                     file.write("Categories=Utility;\n")
-                    file.write("Comment=\n")
+                    # file.write("Comment=\n")
                     file.write("Terminal=false\n")
                     file.write(f"StartupWMClass={project_name}\n")
                     file.close()
@@ -227,7 +234,6 @@ class MainWindow(ctk.CTkToplevel):
             "venv_creation": [],
             "install_libraries": [],
             "nuitka_parts": [],
-            "download_appimagetool": [],
             "AppDir1": [],
             "AppDir2": [],
             "AppDir3": [],
@@ -236,6 +242,8 @@ class MainWindow(ctk.CTkToplevel):
             "cp_icon": [],
             "cp_icon_base": [],
             "dir_icon": [],
+            "download_appimagetool": [],
+            "make_appimage": [],
         }
         
         self.temp_path = self.directory_entry_var.get().strip()
@@ -317,18 +325,11 @@ class MainWindow(ctk.CTkToplevel):
         
         self.commands["nuitka_parts"].append(self.file_name)
         
-        # if not self.dir_has_appimagetool(self.project_directory) when creating subprocess
-        self.appimagetool_link = 'https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage'
-        self.commands["download_appimagetool"] = ['wget', self.appimagetool_link]
-        # os.chmod(file, os.stat(file).st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
-        
         self.commands["AppDir1"] = ['mkdir', '-p', 'AppDir/usr/bin']
-        
         if self.has_icon():
             self.commands["AppDir2"] = ['mkdir', '-p', f'AppDir/usr/share/icons/hicolor/{self.icon_size}/apps']
         else:
-            self.commands["AppDir2"] = ['mkdir' '-p', f'AppDir/usr/share/icons/hicolor/256x256/apps']
-        
+            self.commands["AppDir2"] = ['mkdir', '-p', f'AppDir/usr/share/icons/hicolor/256x256/apps']
         self.commands["AppDir3"] = ['mkdir', '-p', 'AppDir/usr/share/applications']
         
         if self.has_name():
@@ -344,26 +345,81 @@ class MainWindow(ctk.CTkToplevel):
             self.commands["cp_icon_base"] = ['cp', self.icon_directory, f'AppDir/{self.name_entry_var.get()}{self.icon_name[1]}']
             self.commands["dir_icon"] = ['ln', '-s', self.icon_directory, 'AppDir/.DirIcon']
         
-        # self.build_thread(commands=self.commands)
+        self.build_thread(commands=self.commands, directory=self.project_directory, processed_file_name=self.processed_file_name[0])
         
-        # if self.has_name():
-        #     self.create_desktop_file(self.name_entry_var.get())
-        # else:
-        #     self.create_desktop_file(self.processed_file_name[0])
-        
-    def build_thread(self, commands):
+    def build_thread(self, commands, directory, processed_file_name=None):
         
         def check_thread():
             if self.thread.is_alive():
                 self.after(200, check_thread)
             else:
                 pass
-    
-        self.thread = threading.Thread(target=self.build_subprocess, args=(commands), daemon=True)
+        
+        if processed_file_name is not None:
+            self.thread = threading.Thread(target=self.build_subprocess, args=(commands, directory, processed_file_name), daemon=True)
+        else:
+            self.thread = threading.Thread(target=self.build_subprocess, args=(commands, directory), daemon=True)
         self.thread.start()
         
         check_thread()
-
+        
+    
+    def build_subprocess(self, commands, directory, processed_file_name=None):
+        self.arch = platform.machine()
+        self.env = os.environ.copy()
+        self.env["ARCH"] = self.arch
+        
+        if self.arch == 'x86_64':
+            self.arch = 'x86_64'
+        elif self.arch in ('aarch64', 'arm64'):
+            self.arch = 'aarch64'
+        elif self.arch in ('armv7l', 'armv6l'):
+            self.arch = 'armhf'
+        elif self.arch in ('i386', 'i686'):
+            self.arch = 'i686'
+        else:
+            err_msg(f"Unsupported architecture for available AppImageTool binaries: {self.arch}.\nAborting...")
+            return self.cleanup()
+            
+        self.appimagetool_link = f'https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-{self.arch}.AppImage'
+        
+        commands["download_appimagetool"] = ['wget', self.appimagetool_link]
+        
+        self.cmd_order = [
+            "venv_creation",
+            "install_libraries",
+            "nuitka_parts",
+            "AppDir1",
+            "AppDir2",
+            "AppDir3",
+            "dist_to_AppDir",
+            "AppRun",
+            "cp_icon",
+            "cp_icon_base",
+            "dir_icon",
+            "download_appimagetool",
+            "make_appimage"]
+        
+        for cmd in self.cmd_order:
+            if cmd in commands:
+                if cmd == "download_appimagetool":
+                    if not self.dir_has_appimagetool(directory=directory):
+                        subprocess.run(commands[cmd])
+                        self.appimagetool = self.get_appimagetool_filename(directory=directory)
+                        os.chmod(self.appimagetool, os.stat(self.appimagetool).st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
+                    else:
+                        self.appimagetool = self.get_appimagetool_filename(directory=directory)
+                        os.chmod(self.appimagetool, os.stat(self.appimagetool).st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
+                
+                if cmd == "dir_icon":
+                    subprocess.run(commands[cmd], cwd=directory)
+                    if processed_file_name is not None:
+                        self.create_desktop_file(self.name_entry_var.get())
+                    else:
+                        self.create_desktop_file(processed_file_name)
+                    
+                subprocess.run(commands[cmd], cwd=directory)
+            
 
 if __name__ == "__main__":
     main()  
