@@ -136,7 +136,7 @@ class MainWindow(ctk.CTkToplevel):
     def success_msg(self, master, option_1="No", option_2="Yes"):
         msg = CTkMessagebox(master=self, message="AppImage successfully generated!\nWould you like to clean leftovers?", icon='check', title='Success', option_1=option_1, option_2=option_2)
         if msg.get() == option_2:
-            self.cleanup
+            self.cleanup()
         return
             
         
@@ -446,13 +446,14 @@ class MainWindow(ctk.CTkToplevel):
                         self.create_desktop_file(self.final_name)
                         
                     elif cmd == "download_appimagetool":
+                        self.tool_path = os.path.join(directory, self.appimagetool)
                         if not self.dir_has_appimagetool(directory=directory):
-                            self.process = subprocess.run(commands[cmd], check=True)
+                            self.process = subprocess.run(commands[cmd], cwd=directory, check=True)
                             self.appimagetool = self.get_appimagetool_filename(directory=directory)
-                            os.chmod(os.path.join(directory, self.appimagetool), os.stat(self.appimagetool).st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
+                            os.chmod(self.tool_path, os.stat(self.tool_path).st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
                         else:
                             self.appimagetool = self.get_appimagetool_filename(directory=directory)
-                            os.chmod(os.path.join(directory, self.appimagetool), os.stat(self.appimagetool).st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
+                            os.chmod(self.tool_path, os.stat(self.tool_path).st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
                     
                     elif cmd == "make_appimage":
                         self.process = subprocess.run([self.appimagetool, 'AppDir', f'{self.final_name}-{self.arch}.AppImage'], cwd=directory, env=self.env, check=True)
@@ -468,7 +469,7 @@ class MainWindow(ctk.CTkToplevel):
         if self.process.returncode == 0:
             self.after(0, lambda: self.success_msg(master=self))
         else:
-            self.after(0, err_msg(master=self, text=f"The subprocess has failed.\nReturn code: {self.process.returncode}"))
+            self.after(0, lambda: err_msg(master=self, text=f"The subprocess has failed.\nReturn code: {self.process.returncode}"))
             self.cleanup()
             return
 
