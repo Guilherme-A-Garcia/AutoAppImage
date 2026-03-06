@@ -409,7 +409,7 @@ class MainWindow(ctk.CTkToplevel):
         elif self.arch in ('i386', 'i686'):
             self.arch = 'i686'
         else:
-            err_msg(f"Unsupported architecture for available AppImageTool binaries: {self.arch}.\nAborting...")
+            err_msg(master=self, text=f"Unsupported architecture for available AppImageTool binaries: {self.arch}.\nAborting...")
             return self.cleanup()
             
         self.appimagetool_link = f'https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-{self.arch}.AppImage'
