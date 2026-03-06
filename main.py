@@ -63,7 +63,8 @@ class MainWindow(ctk.CTkToplevel):
         self.rowconfigure(0, weight=0)
         self.rowconfigure(1, weight=0)
         self.rowconfigure(2, weight=6)
-        self.rowconfigure(3, weight=1)
+        self.rowconfigure(3, weight=0)
+        self.rowconfigure(4, weight=1)
         
         dynamic_resolution(self, 500, 650)
         self.title("AutoAppImage")
@@ -123,8 +124,30 @@ class MainWindow(ctk.CTkToplevel):
         self.build_button_separator = ctk.CTkFrame(self.entry_frame, height=1, fg_color="gray", bg_color="gray")
         self.build_button_separator.pack(fill='x', pady=(5,0))
         
+        self.progress_bar = ctk.CTkProgressBar(self, orientation="horizontal", height=5, corner_radius=10, mode="indeterminate", border_width=1)
+        self.progress_bar.grid(row=3, columnspan=3, sticky='ew', padx=100, pady=10)
+        self.disable_progress_bar()
+        
         self.build_button = ctk.CTkButton(self, text="Build AppImage", font=("", 20), command=self.build_appimage)
-        self.build_button.grid(row=3, columnspan=3, sticky="ew", padx=100, pady=20)
+        self.build_button.grid(row=4, columnspan=3, sticky="ew", padx=100, pady=10)
+        
+        self.widgets = [self.name_entry, self.directory_entry, self.directory_search, self.dependencies_entry, self.optional_data_entry, self.icon_entry, self.icon_search, self.extra_optional_entry, self.extra_optional_search, self.build_button]
+        
+    def enable_progress_bar(self):
+        self.progress_bar.grid()
+        self.progress_bar.start()
+    
+    def disable_progress_bar(self):
+        self.progress_bar.stop()
+        self.progress_bar.grid_forget()
+        
+    def disable_widgets(self):
+        for widget in self.widgets:
+            widget.configure(state='disabled')
+        
+    def enable_widgets(self):
+        for widget in self.widgets:
+            widget.configure(state='normal')
 
     def get_extra_dependencies(self):
         self.pre_extra_directory = ctk.filedialog.askdirectory(title="Extra dependency path selection")
@@ -353,16 +376,19 @@ class MainWindow(ctk.CTkToplevel):
             if self.thread.is_alive():
                 self.after(200, check_thread)
             else:
-                pass
+                self.enable_widgets()
+                self.disable_progress_bar()
         
         if processed_file_name is not None:
             self.thread = threading.Thread(target=self.build_subprocess, args=(commands, directory, processed_file_name), daemon=True)
         else:
             self.thread = threading.Thread(target=self.build_subprocess, args=(commands, directory), daemon=True)
+        
+        self.disable_widgets()
+        self.enable_progress_bar()
         self.thread.start()
         
         check_thread()
-        
     
     def build_subprocess(self, commands, directory, processed_file_name=None):
         self.arch = platform.machine()
