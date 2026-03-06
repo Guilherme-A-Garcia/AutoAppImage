@@ -434,6 +434,11 @@ class MainWindow(ctk.CTkToplevel):
         for cmd in self.cmd_order:
             if cmd in commands:
                 try:
+                    if cmd == "dir_icon":
+                        self.process = subprocess.run(commands[cmd], cwd=directory, check=True)
+                        self.create_desktop_file(self.final_name)
+                        continue
+                        
                     if cmd == "download_appimagetool":
                         if not self.dir_has_appimagetool(directory=directory):
                             self.process = subprocess.run(commands[cmd], check=True)
@@ -442,15 +447,14 @@ class MainWindow(ctk.CTkToplevel):
                         else:
                             self.appimagetool = self.get_appimagetool_filename(directory=directory)
                             os.chmod(self.appimagetool, os.stat(self.appimagetool).st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
-                    
-                    if cmd == "dir_icon":
-                        self.process = subprocess.run(commands[cmd], cwd=directory, check=True)
-                        self.create_desktop_file(self.final_name)
+                        continue
                     
                     if cmd == "make_appimage":
                         self.process = subprocess.run([self.appimagetool, 'AppDir', f'{self.final_name}-{self.arch}.AppImage'], cwd=directory, env=self.env, check=True)
-                        
+                        continue
+                    
                     self.process = subprocess.run(commands[cmd], cwd=directory, check=True)
+                        
                 except Exception as e:
                     err_msg(master=self, text=f'An error has occurred: {e}')
                     self.cleanup()
