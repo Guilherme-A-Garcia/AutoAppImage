@@ -240,6 +240,21 @@ class MainWindow(ctk.CTkToplevel):
                 err_msg(master=self, text="Error: Please fill all required entries.")
                 return
         
+        self.commands = {
+            "venv_creation": [],
+            "install_libraries": [],
+            "nuitka_parts": [],
+            "download_appimagetool": [],
+            "AppDir1": [],
+            "AppDir2": [],
+            "AppDir3": [],
+            "dist_to_AppDir": [],
+            "AppRun": [],
+            "cp_icon": [],
+            "cp_icon_base": [],
+            "dir_icon": [],
+        }
+        
         self.temp_path = self.directory_entry_var.get().strip()
         self.project_directory = os.path.dirname(self.temp_path) # CWD var <-----------
         if not os.path.exists(self.project_directory):
@@ -274,11 +289,12 @@ class MainWindow(ctk.CTkToplevel):
         self.venv_python = os.path.join(self.venv_directory, 'bin', 'python')
         self.venv_pip = os.path.join(self.venv_directory, 'bin', 'pip')
         
-        self.venv_creation = [self.venv_python, '-m', 'venv', self.venv_directory]
+        self.commands["venv_creation"] = [sys.executable, '-m', 'venv', self.venv_directory]
         
-        self.install_libraries = [self.venv_pip, 'install', 'nuitka', *self.imports]
+        if self.is_dependent():
+            self.commands["install_libraries"] = [self.venv_pip, 'install', 'nuitka', *self.imports]
         
-        self.nuitka_parts = [self.venv_python, '-m', 'nuitka', '--standalone', '--remove-output', '--output-dir=dist']
+        self.commands["nuitka_parts"] = [self.venv_python, '-m', 'nuitka', '--standalone', '--remove-output', '--output-dir=dist']
         
         if self.is_dependent():
             self.enabled_plugins = set()
@@ -288,7 +304,7 @@ class MainWindow(ctk.CTkToplevel):
                         self.enabled_plugins.add(plugin_name)
             
             for plugin in self.enabled_plugins:
-                self.nuitka_parts.append(f'--enable-plugin={plugin}')
+                self.commands["nuitka_parts"].append(f'--enable-plugin={plugin}')
         
         if self.is_optional_dependent():
             self.enabled_dependencies = set()
@@ -296,7 +312,7 @@ class MainWindow(ctk.CTkToplevel):
                 self.enabled_dependencies.add(dependency)
             
             for dependency in self.enabled_dependencies:
-                self.nuitka_parts.append(f'--include-package-data={dependency}')
+                self.commands["nuitka_parts"].append(f'--include-package-data={dependency}')
         
         if self.has_extra_optional():
             self.extra_deps = set()
@@ -304,41 +320,46 @@ class MainWindow(ctk.CTkToplevel):
                 self.extra_deps.add(dep)
 
             for dep in self.extra_deps:
-                self.nuitka_parts.append(f'--include-data-files={dep}')
+                self.commands["nuitka_parts"].append(f'--include-data-files={dep}')
         
         if self.has_icon():
-            self.nuitka_parts.append(f'--linux-onefile-icon={self.icon_directory}')
-            self.nuitka_parts.append(f'--include-data-files={os.path.dirname(self.icon_directory)}={os.path.basename(self.icon_directory)}')
+            self.commands["nuitka_parts"].append(f'--linux-onefile-icon={self.icon_directory}')
+            self.commands["nuitka_parts"].append(f'--include-data-files={os.path.dirname(self.icon_directory)}={os.path.basename(self.icon_directory)}')
         
         if self.has_name():
-            self.nuitka_parts.append(f'--output-filename="{self.name_entry_var.get()}"')
+            self.commands["nuitka_parts"].append(f'--output-filename={self.name_entry_var.get()}')
         else:
             self.processed_file_name = os.path.splitext(self.file_name)
-            self.nuitka_parts.append(f'--output-filename="{self.processed_file_name[0]}"')
+            self.commands["nuitka_parts"].append(f'--output-filename={self.processed_file_name[0]}')
         
-        self.nuitka_parts.append(self.file_name)
+        self.commands["nuitka_parts"].append(self.file_name)
         
         # if not self.dir_has_appimagetool(self.project_directory) when creating subprocess
         self.appimagetool_link = 'https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage'
-        self.download_appimagetool = ['wget', self.appimagetool_link]
+        self.commands["download_appimagetool"] = ['wget', self.appimagetool_link]
         # os.chmod(file, os.stat(file).st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
         
-        self.AppDir1 = ['mkdir', 'p', 'AppDir/usr/bin']
-        self.AppDir2 = ['mkdir', 'p', f'AppDir/usr/share/icons/hicolor/{self.icon_size}/apps']
-        self.AppDir3 = ['mkdir', 'p', 'AppDir/usr/share/applications']
+        self.commands["AppDir1"] = ['mkdir', '-p', 'AppDir/usr/bin']
+        
+        if self.has_icon():
+            self.commands["AppDir2"] = ['mkdir', '-p', f'AppDir/usr/share/icons/hicolor/{self.icon_size}/apps']
+        else:
+            self.commands["AppDir2"] = ['mkdir' '-p', f'AppDir/usr/share/icons/hicolor/256x256/apps']
+        
+        self.commands["AppDir3"] = ['mkdir', '-p', 'AppDir/usr/share/applications']
         
         if self.has_name():
-            self.dist_to_AppDir = ['cp', '-r', f'dist/{self.name_entry_var.get()}.dist/*', 'AppDir/usr/bin/']
-            self.AppRun = ['ln', '-s', f'usr/bin/{self.name_entry_var.get()}', 'AppDir/AppRun']
+            self.commands["dist_to_AppDir"] = ['cp', '-r', f'dist/{self.name_entry_var.get()}.dist/*', 'AppDir/usr/bin/']
+            self.commands["AppRun"] = ['ln', '-s', f'usr/bin/{self.name_entry_var.get()}', 'AppDir/AppRun']
         else:
-            self.dist_to_AppDir = ['cp', '-r', f'dist/{self.processed_file_name[0]}.dist/*', 'AppDir/usr/bin/']
-            self.AppRun = ['ln', '-s', f'usr/bin/{self.processed_file_name[0]}', 'AppDir/AppRun']
+            self.commands["dist_to_AppDir"] = ['cp', '-r', f'dist/{self.processed_file_name[0]}.dist/*', 'AppDir/usr/bin/']
+            self.commands["AppRun"] = ['ln', '-s', f'usr/bin/{self.processed_file_name[0]}', 'AppDir/AppRun']
         
         if self.has_icon():
             self.icon_name = os.path.splitext(os.path.basename(self.icon_directory))
-            self.cp_icon = ['cp', self.icon_directory, f'AppDir/usr/share/icons/hicolor/{self.icon_size}/apps/{self.name_entry_var.get()}{self.icon_name[1]}']
-            self.cp_icon_base = ['cp', self.icon_directory, f'AppDir/{self.name_entry_var.get()}{self.icon_name[1]}']
-            self.dir_icon = ['ln', '-s', self.icon_directory, 'AppDir/.DirIcon']
+            self.commands["cp_icon"] = ['cp', self.icon_directory, f'AppDir/usr/share/icons/hicolor/{self.icon_size}/apps/{self.name_entry_var.get()}{self.icon_name[1]}']
+            self.commands["cp_icon_base"] = ['cp', self.icon_directory, f'AppDir/{self.name_entry_var.get()}{self.icon_name[1]}']
+            self.commands["dir_icon"] = ['ln', '-s', self.icon_directory, 'AppDir/.DirIcon']
         
         # if self.has_name():
         #     self.create_desktop_file(self.name_entry_var.get())
