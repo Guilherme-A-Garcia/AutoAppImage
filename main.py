@@ -129,7 +129,7 @@ class MainWindow(ctk.CTkToplevel):
         self.disable_progress_bar()
         
         self.build_button = ctk.CTkButton(self, text="Build AppImage", font=("", 20), command=self.build_appimage)
-        self.build_button.grid(row=4, columnspan=3, sticky="ew", padx=100, pady=10)
+        self.build_button.grid(row=4, columnspan=3, sticky="ew", padx=100, pady=(0,20))
         
         self.widgets = [self.name_entry, self.directory_entry, self.directory_search, self.dependencies_entry, self.optional_data_entry, self.icon_entry, self.icon_search, self.extra_optional_entry, self.extra_optional_search, self.build_button]
         
@@ -391,6 +391,11 @@ class MainWindow(ctk.CTkToplevel):
         check_thread()
     
     def build_subprocess(self, commands, directory, processed_file_name=None):
+        if processed_file_name is not None:
+            self.final_name = processed_file_name
+        else:
+            self.final_name = self.name_entry_var.get()
+        
         self.arch = platform.machine()
         self.env = os.environ.copy()
         self.env["ARCH"] = self.arch
@@ -428,24 +433,40 @@ class MainWindow(ctk.CTkToplevel):
         
         for cmd in self.cmd_order:
             if cmd in commands:
-                if cmd == "download_appimagetool":
-                    if not self.dir_has_appimagetool(directory=directory):
-                        subprocess.run(commands[cmd])
-                        self.appimagetool = self.get_appimagetool_filename(directory=directory)
-                        os.chmod(self.appimagetool, os.stat(self.appimagetool).st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
-                    else:
-                        self.appimagetool = self.get_appimagetool_filename(directory=directory)
-                        os.chmod(self.appimagetool, os.stat(self.appimagetool).st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
-                
-                if cmd == "dir_icon":
-                    subprocess.run(commands[cmd], cwd=directory)
-                    if processed_file_name is not None:
-                        self.create_desktop_file(self.name_entry_var.get())
-                    else:
-                        self.create_desktop_file(processed_file_name)
+                try:
+                    if cmd == "download_appimagetool":
+                        if not self.dir_has_appimagetool(directory=directory):
+                            self.process = subprocess.run(commands[cmd], check=True)
+                            self.appimagetool = self.get_appimagetool_filename(directory=directory)
+                            os.chmod(self.appimagetool, os.stat(self.appimagetool).st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
+                        else:
+                            self.appimagetool = self.get_appimagetool_filename(directory=directory)
+                            os.chmod(self.appimagetool, os.stat(self.appimagetool).st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
                     
-                subprocess.run(commands[cmd], cwd=directory)
-            
+                    if cmd == "dir_icon":
+                        self.process = subprocess.run(commands[cmd], cwd=directory, check=True)
+                        self.create_desktop_file(self.final_name)
+                    
+                    if cmd == "make_appimage":
+                        self.process = subprocess.run([self.appimagetool, 'AppDir', f'{self.final_name}-{self.arch}.AppImage'], cwd=directory, env=self.env, check=True)
+                        
+                    self.process = subprocess.run(commands[cmd], cwd=directory, check=True)
+                except Exception as e:
+                    err_msg(master=self, text=f'An error has occurred: {e}')
+                    self.cleanup()
+                    return
+                    
+        if self.process.returncode == 0:
+            self.success_msg = CTkMessagebox(master=self, message="AppImage successfully generated!\nWould you like to clean leftovers?", icon='check', title='Success', option_1='No', option_2='Yes')
+            if self.success_msg.get() == "Yes":
+                self.cleanup()
+                return
+            else:
+                return
+        else:
+            err_msg(master=self, text=f"The subprocess has failed.\nReturn code: {self.process.returncode}")
+            self.cleanup()
+            return
 
 if __name__ == "__main__":
     main()  
