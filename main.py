@@ -139,7 +139,6 @@ class MainWindow(ctk.CTkToplevel):
             self.cleanup()
         return
             
-        
     def enable_progress_bar(self):
         self.progress_bar.grid(row=3, columnspan=3, sticky='ew', padx=100, pady=10)
         self.progress_bar.start()
@@ -232,6 +231,9 @@ class MainWindow(ctk.CTkToplevel):
             
             if os.path.exists(f'{self.project_directory}/{self.new_venv_name}/'):
                 subprocess.run(['rm', '-rf', f'{self.new_venv_name}/'], cwd=self.project_directory)
+            
+            if os.path.exists(f'{self.project_directory}/{self.get_appimagetool_filename}'):
+                subprocess.run(['rm', '-rf', self.get_appimagetool_filename], cwd=self.project_directory)
 
     def create_desktop_file(self, project_name):
         if os.path.exists(f'{self.project_directory}/AppDir'):
