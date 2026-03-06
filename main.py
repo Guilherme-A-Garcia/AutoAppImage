@@ -133,12 +133,9 @@ class MainWindow(ctk.CTkToplevel):
         else:
             err_msg(master=self, text="Error: Invalid path")
             return
-
+    
     def dir_has_appimagetool(self, dir):
-        for file in os.listdir(dir):
-            if file.startswith("appimagetool"):
-                return True
-        return False
+        return any(file.startswith("appimagetool") for file in os.listdir(dir))
 
     def get_directory(self):
         self.pre_directory = ctk.filedialog.askopenfilename(title="Main python file selection", filetypes=(("Python files", "*.py"), ("All files", "*.*")))
@@ -165,34 +162,19 @@ class MainWindow(ctk.CTkToplevel):
             return
 
     def is_dependent(self):
-        if self.dependencies_entry.get():
-            return True
-        else:
-            return False
+        return bool(self.dependencies_entry.get())
         
     def is_optional_dependent(self):
-        if self.optional_data_entry.get():
-            return True
-        else:
-            return False
+        return bool(self.optional_data_entry.get())
         
     def has_icon(self):
-        if self.icon_entry_var.get() != '':
-            return True
-        else:
-            return False
+        return bool(self.icon_entry_var.get() != '')
     
     def has_extra_optional(self):
-        if self.extra_optional_entry_var.get() != '':
-            return True
-        else:
-            return False
+        return bool(self.extra_optional_entry_var.get() != '')
     
     def has_name(self):
-        if self.name_entry_var.get() != '':
-            return True
-        else:
-            return False
+        return bool(self.name_entry_var.get() != '')
     
     def get_imports(self, widget):
         # I hate list comprehension but oh well
