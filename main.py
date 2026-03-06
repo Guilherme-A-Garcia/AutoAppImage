@@ -118,8 +118,14 @@ class MainWindow(ctk.CTkToplevel):
         self.extra_optional_entry = ctk.CTkEntry(self.entry_frame, textvariable=self.extra_optional_entry_var)
         self.extra_optional_entry.pack(anchor="center", padx=30, fill='x')
         
-        self.extra_optional_search = ctk.CTkButton(self.entry_frame, text="🔎 Search folder", font=("", 15), command=self.get_extra_dependencies)
-        self.extra_optional_search.pack(anchor="center", pady=(2,10))
+        self.extra_optional_frame = ctk.CTkFrame(self.entry_frame, fg_color="transparent")
+        self.extra_optional_frame.pack(anchor="center", pady=(2,10))
+        
+        self.extra_optional_search_dir = ctk.CTkButton(self.extra_optional_frame, text="🔎 Search folder", font=("", 15), command=self.get_extra_dependencies_dir)
+        self.extra_optional_search_dir.grid(column=0, row=0, padx=2)
+        
+        self.extra_optional_search_file = ctk.CTkButton(self.extra_optional_frame, text="🔎 Search file", font=("", 15), command=self.get_extra_dependencies_file)
+        self.extra_optional_search_file.grid(column=1, row=0, padx=2)
         
         self.build_button_separator = ctk.CTkFrame(self.entry_frame, height=1, fg_color="gray", bg_color="gray")
         self.build_button_separator.pack(fill='x', pady=(5,0))
@@ -131,7 +137,7 @@ class MainWindow(ctk.CTkToplevel):
         self.build_button = ctk.CTkButton(self, text="Build AppImage", font=("", 20), command=self.build_appimage)
         self.build_button.grid(row=4, columnspan=3, sticky="ew", padx=100, pady=(0,20))
         
-        self.widgets = [self.name_entry, self.directory_entry, self.directory_search, self.dependencies_entry, self.optional_data_entry, self.icon_entry, self.icon_search, self.extra_optional_entry, self.extra_optional_search, self.build_button]
+        self.widgets = [self.name_entry, self.directory_entry, self.directory_search, self.dependencies_entry, self.optional_data_entry, self.icon_entry, self.icon_search, self.extra_optional_entry, self.extra_optional_search_dir, self.extra_optional_search_file, self.build_button]
     
     def success_msg(self, master, option_1="No", option_2="Yes"):
         msg = CTkMessagebox(master=self, message="AppImage successfully generated!\nWould you like to clean leftovers?", icon='check', title='Success', option_1=option_1, option_2=option_2)
@@ -155,8 +161,8 @@ class MainWindow(ctk.CTkToplevel):
         for widget in self.widgets:
             widget.configure(state='normal')
 
-    def get_extra_dependencies(self):
-        self.pre_extra_directory = ctk.filedialog.askdirectory(title="Extra dependency path selection")
+    def get_extra_dependencies_dir(self):
+        self.pre_extra_directory = ctk.filedialog.askdirectory(title="Extra dependency folder path selection")
         if not self.pre_extra_directory:
             return
 
@@ -164,6 +170,17 @@ class MainWindow(ctk.CTkToplevel):
             self.extra_optional_entry_var.set(self.extra_optional_entry_var.get() + self.pre_extra_directory)
         else:
             err_msg(master=self, text="Error: Invalid path")
+            return
+    
+    def get_extra_dependencies_file(self):
+        self.pre_extra_directory = ctk.filedialog.askopenfilename(title="Extra dependency file path selection")
+        if not self.pre_extra_directory:
+            return
+        
+        if os.path.exists(self.pre_extra_directory):
+            self.extra_optional_entry_var.set(self.extra_optional_entry_var.get() + self.pre_extra_directory)
+        else:
+            err_msg(master=self, text="Error: Invalid path.")
             return
     
     def dir_has_appimagetool(self, directory):
@@ -232,8 +249,9 @@ class MainWindow(ctk.CTkToplevel):
             if os.path.exists(f'{self.project_directory}/{self.new_venv_name}/'):
                 subprocess.run(['rm', '-rf', f'{self.new_venv_name}/'], cwd=self.project_directory)
             
-            if os.path.exists(f'{self.project_directory}/{self.get_appimagetool_filename}'):
-                subprocess.run(['rm', '-rf', self.get_appimagetool_filename], cwd=self.project_directory)
+            if self.dir_has_appimagetool(directory=self.project_directory):
+                self.appimagetool = os.path.join(self.project_directory, self.get_appimagetool_filename(self.project_directory))
+                subprocess.run(['rm', '-rf', self.appimagetool], cwd=self.project_directory)
 
     def create_desktop_file(self, project_name):
         if os.path.exists(f'{self.project_directory}/AppDir'):
@@ -258,6 +276,13 @@ class MainWindow(ctk.CTkToplevel):
             return
 
     def build_appimage(self):
+        self.imports = []
+        self.optional_dependencies = []
+        self.extra_optional_dependencies = []
+        self.enabled_plugins = set()
+        self.enabled_dependencies = set()
+        self.extra_deps = set()
+        
         fields = (self.directory_entry,)
         for field in fields:
             if not field.get():
@@ -368,7 +393,10 @@ class MainWindow(ctk.CTkToplevel):
 
             for dep in self.extra_deps:
                 self.dep_name = os.path.basename(dep)
-                self.commands["nuitka_parts"].append(f'--include-data-dir={dep}={self.dep_name}')
+                if os.path.isdir(dep):
+                    self.commands["nuitka_parts"].append(f'--include-data-dir={dep}={self.dep_name}')
+                else:
+                    self.commands["nuitka_parts"].append(f'--include-data-file={dep}={self.dep_name}')
         
         if self.has_icon():
             self.icon_folder = os.path.dirname(self.icon_directory)
@@ -484,6 +512,7 @@ class MainWindow(ctk.CTkToplevel):
                     
         if self.process.returncode == 0:
             self.after(0, lambda: self.success_msg(master=self))
+            return
         else:
             self.after(0, lambda: err_msg(master=self, text=f"The subprocess has failed.\nReturn code: {self.process.returncode}"))
             self.cleanup()
