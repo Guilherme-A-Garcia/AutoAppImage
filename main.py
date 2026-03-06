@@ -431,7 +431,7 @@ class MainWindow(ctk.CTkToplevel):
             "make_appimage"]
         
         for cmd in self.cmd_order:
-            if cmd in commands:
+            if cmd in commands and commands[cmd]:
                 try:
                     if cmd == "dir_icon":
                         self.process = subprocess.run(commands[cmd], cwd=directory, check=True)
