@@ -305,6 +305,7 @@ class MainWindow(ctk.CTkToplevel):
             self.new_venv_name = 'appimage-build-venv'
         
         self.venv_directory = os.path.join(self.project_directory, self.new_venv_name)
+        self.file_directory = self.directory_entry_var.get().strip()
         self.file_name = os.path.basename(self.file_directory)
         
         self.venv_python = os.path.join(self.venv_directory, 'bin', 'python')
