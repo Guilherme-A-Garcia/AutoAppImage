@@ -20,10 +20,10 @@ def dynamic_resolution(d_root, d_width, d_height):
     d_root.geometry(f"{d_width}x{d_height}+{x}+{y}")
 
 def err_msg(master, text):
-    msg = CTkMessagebox(master=master, message=text, icon='cancel', title="Error")
+    msg = CTkMessagebox(master=master, message=text, icon='cancel', title="Error", option_focus=1, button_color="#950808", button_hover_color="#630202")
 
 def info_msg(master, text):
-    msg = CTkMessagebox(master=master, message=text, icon='info', title="Info")
+    msg = CTkMessagebox(master=master, message=text, icon='info', title="Info", option_focus=1, button_color="#950808", button_hover_color="#630202")
     
 def set_window_icon(root):
     try:
@@ -108,7 +108,7 @@ class MainWindow(ctk.CTkToplevel):
         self.directory_entry = ctk.CTkEntry(self.entry_frame, textvariable=self.directory_entry_var)
         self.directory_entry.pack(anchor="center", padx=30, fill='x')
         
-        self.directory_search = ctk.CTkButton(self.entry_frame, text="🔎 Search file", font=("", 15), command=self.get_directory)
+        self.directory_search = ctk.CTkButton(self.entry_frame, text="🔎 Search file", font=("", 15), command=self.get_directory, fg_color="#950808", hover_color="#630202", corner_radius=10, border_color="#440000", border_width=1)
         self.directory_search.pack(anchor="center", pady=(2,10))
         
         self.dependencies_label = ctk.CTkLabel(self.entry_frame, text="Enter your project's imports (separated by commas):", font=("", 16))
@@ -127,7 +127,7 @@ class MainWindow(ctk.CTkToplevel):
         self.icon_entry = ctk.CTkEntry(self.entry_frame, textvariable=self.icon_entry_var)
         self.icon_entry.pack(anchor="center", padx=30, fill='x')
         
-        self.icon_search = ctk.CTkButton(self.entry_frame, text="🔎 Search icon", font=("", 15), command=self.get_icon_directory)
+        self.icon_search = ctk.CTkButton(self.entry_frame, text="🔎 Search icon", font=("", 15), command=self.get_icon_directory, fg_color="#950808", hover_color="#630202", corner_radius=10, border_color="#440000", border_width=1)
         self.icon_search.pack(anchor="center", pady=(2,10))
         
         self.extra_optional_label = ctk.CTkLabel(self.entry_frame, text="Include package data path (optional, separated by commas):", font=("", 16))
@@ -139,10 +139,10 @@ class MainWindow(ctk.CTkToplevel):
         self.extra_optional_frame = ctk.CTkFrame(self.entry_frame, fg_color="transparent")
         self.extra_optional_frame.pack(anchor="center", pady=(2,10))
         
-        self.extra_optional_search_dir = ctk.CTkButton(self.extra_optional_frame, text="🔎 Search folder", font=("", 15), command=self.get_extra_dependencies_dir)
+        self.extra_optional_search_dir = ctk.CTkButton(self.extra_optional_frame, text="🔎 Search folder", font=("", 15), command=self.get_extra_dependencies_dir, fg_color="#950808", hover_color="#630202", corner_radius=10, border_color="#440000", border_width=1)
         self.extra_optional_search_dir.grid(column=0, row=0, padx=2)
         
-        self.extra_optional_search_file = ctk.CTkButton(self.extra_optional_frame, text="🔎 Search file", font=("", 15), command=self.get_extra_dependencies_file)
+        self.extra_optional_search_file = ctk.CTkButton(self.extra_optional_frame, text="🔎 Search file", font=("", 15), command=self.get_extra_dependencies_file, fg_color="#950808", hover_color="#630202", corner_radius=10, border_color="#440000", border_width=1)
         self.extra_optional_search_file.grid(column=1, row=0, padx=2)
         
         self.build_button_separator = ctk.CTkFrame(self.entry_frame, height=1, fg_color="gray", bg_color="gray")
@@ -152,13 +152,13 @@ class MainWindow(ctk.CTkToplevel):
         self.progress_bar.grid(row=3, columnspan=3, sticky='ew', padx=100, pady=10)
         self.disable_progress_bar()
         
-        self.build_button = ctk.CTkButton(self, text="Build AppImage", font=("", 20), command=self.build_appimage)
+        self.build_button = ctk.CTkButton(self, text="Build AppImage", font=("", 20), command=self.build_appimage, fg_color="#950808", hover_color="#630202", corner_radius=10, border_color="#440000", border_width=1)
         self.build_button.grid(row=4, columnspan=3, sticky="ew", padx=100, pady=(0,20))
         
         self.widgets = [self.name_entry, self.directory_entry, self.directory_search, self.dependencies_entry, self.optional_data_entry, self.icon_entry, self.icon_search, self.extra_optional_entry, self.extra_optional_search_dir, self.extra_optional_search_file, self.build_button]
     
     def success_msg(self, master, option_1="No", option_2="Yes"):
-        msg = CTkMessagebox(master=self, message="AppImage successfully generated!\nWould you like to clean leftovers?", icon='check', title='Success', option_1=option_1, option_2=option_2)
+        msg = CTkMessagebox(master=self, message="AppImage successfully generated!\nWould you like to clean leftovers?", icon='check', title='Success', option_1=option_1, option_2=option_2, button_color="#950808", button_hover_color="#630202", border_width=1)
         if msg.get() == option_2:
             self.cleanup()
         return
