@@ -38,7 +38,7 @@ def set_window_icon(root):
         if os.path.exists(icon_path):
             pil_img = Image.open(icon_path).convert("RGBA")
             imgtk = ImageTk.PhotoImage(pil_img)
-            root.after(100, root.iconphoto(False, imgtk))
+            root.after(100, root.iconphoto(True, imgtk))
     except Exception as e:
         print(f"Couldn't load icon: {e}")
 
