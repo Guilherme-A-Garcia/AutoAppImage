@@ -381,8 +381,9 @@ class MainWindow(ctk.CTkToplevel):
         else:
             self.final_name = os.path.splitext(self.file_name)[0]
         
+        self.commands["install_libraries"] = [self.venv_pip, 'install', 'nuitka']
         if self.is_dependent():
-            self.commands["install_libraries"] = [self.venv_pip, 'install', 'nuitka', *self.imports]
+            self.commands["install_libraries"].append(*self.imports)
         
         self.commands["nuitka_parts"] = [self.venv_python, '-m', 'nuitka', '--standalone', '--remove-output', '--output-dir=dist']
         
