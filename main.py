@@ -28,7 +28,7 @@ def info_msg(master, text):
 def set_window_icon(root):
     try:
         icon = 'icon.png'
-        if hasattr(sys, 'frozen', False):
+        if getattr(sys, 'frozen', False):
             icon_path = os.path.join(os.path.dirname(sys.executable), icon)
             if not os.path.exists(icon_path):
                 icon_path = os.path.join(os.getcwd(), icon)
