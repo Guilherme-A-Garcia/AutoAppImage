@@ -4,7 +4,7 @@ import stat
 import platform
 import threading
 import subprocess
-from PIL import Image
+from PIL import Image, ImageTk
 import customtkinter as ctk
 from CTkMessagebox import CTkMessagebox
 
@@ -24,6 +24,23 @@ def err_msg(master, text):
 
 def info_msg(master, text):
     msg = CTkMessagebox(master=master, message=text, icon='info', title="Info")
+    
+def set_window_icon(root):
+    try:
+        icon = 'icon.png'
+        if hasattr(sys, 'frozen', False):
+            icon_path = os.path.join(os.path.dirname(sys.executable), icon)
+            if not os.path.exists(icon_path):
+                icon_path = os.path.join(os.getcwd(), icon)
+        else:
+            icon_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), icon)
+        
+        if os.path.exists(icon_path):
+            pil_img = Image.open(icon_path).convert("RGBA")
+            imgtk = ImageTk.PhotoImage(pil_img)
+            root.after(100, root.iconphoto(False, imgtk))
+    except Exception as e:
+        print(f"Couldn't load icon: {e}")
 
 class Controller():
     def __init__(self):
