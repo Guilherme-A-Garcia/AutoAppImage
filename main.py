@@ -83,6 +83,7 @@ class MainWindow(ctk.CTkToplevel):
         self.rowconfigure(3, weight=0)
         self.rowconfigure(4, weight=1)
         
+        set_window_icon(self)
         dynamic_resolution(self, 500, 650)
         self.title("AutoAppImage")
         
@@ -521,6 +522,7 @@ class MainWindow(ctk.CTkToplevel):
                             
             self.tool = os.path.join(directory, self.get_appimagetool_filename(directory))
             self.process = subprocess.run([self.tool, 'AppDir', f'{self.final_name}-{self.arch}.AppImage'], cwd=directory)
+            print(self.process.stdout)
                         
         except Exception as e:
             self.after(0, lambda e=e: err_msg(master=self, text=f'An error has occurred: {e}'))
