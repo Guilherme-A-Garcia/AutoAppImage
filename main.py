@@ -1,6 +1,7 @@
 import os
 import sys
 import stat
+import shutil
 import platform
 import threading
 import subprocess
@@ -374,7 +375,8 @@ class MainWindow(ctk.CTkToplevel):
         self.venv_python = os.path.join(self.venv_directory, 'bin', 'python')
         self.venv_pip = os.path.join(self.venv_directory, 'bin', 'pip')
         
-        self.commands["venv_creation"] = [sys.executable, '-m', 'venv', self.venv_directory]
+        self.python = shutil.which("python3") or shutil.which("python")
+        self.commands["venv_creation"] = [self.python, '-m', 'venv', self.venv_directory]
         
         if self.has_name():
             self.final_name = self.name_entry_var.get()
