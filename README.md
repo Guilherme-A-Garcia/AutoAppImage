@@ -33,10 +33,15 @@ Otherwise, you will not need to download anything, as AutoAppImage downloads and
 
 ## How to Use
 1. Download the latest release of this project;
-2. Give the .AppImage executable permissions with `chmod +xw` and open it;
+2. [IMPORTANT] Give the .AppImage executable/write permissions with `chmod +xw` and open it;
 3. Fill the required fields;
 4. Click "Build AppImage;"
 5. Wait for the process to end and enjoy the .AppImage!
+
+>[!TIP]
+>The third field, "Enter your project's imports", refers to the --enable-plugin flag. For more information, check [this page](https://github.com/Nuitka/Nuitka/blob/develop/Standard-Plugins-Documentation.rst).<br>
+>The fourth field, "Include optional package data", refers to --include-package-data. This field is reserved for automatically detecting your dependency files.<br>
+>The last field, "Include package data path", refers to --include-data-dir/--include-data-file, which is a manual version of the fourth field.
 
 ## Using the Source Code
 
