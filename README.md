@@ -10,8 +10,8 @@ The available [binaries](https://github.com/Guilherme-A-Garcia/AutoAppImage/rele
 
 ## Table of Contents
 <!-- - [Roadmap](#roadmap)-->
-- [Current Features](#current-features)
 - [Preview](#preview)
+- [Current Features](#current-features)
 - [Requirements](#requirements)
 - [How to Use](#how-to-use)
 - [Using the Source Code](#using-the-source-code)
