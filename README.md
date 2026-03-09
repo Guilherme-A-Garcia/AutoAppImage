@@ -10,16 +10,16 @@ The available [binaries](https://github.com/Guilherme-A-Garcia/AutoAppImage/rele
 
 ## Table of Contents
 <!-- - [Roadmap](#roadmap)-->
-<!-- - [Preview](#preview)-->
 - [Current Features](#current-features)
+- [Preview](#preview)
 - [Requirements](#requirements)
 - [How to Use](#how-to-use)
 - [Using the Source Code](#using-the-source-code)
 - [Acknowledgements](#acknowledgements)
 - [How to Contribute](#how-to-contribute)
 
-<!--## Preview
-![Main interface](assets/previews/Main.png)-->
+## Preview
+![Main interface](assets/previews/Main.png)
 
 ## Current Features
 - Simple GUI
