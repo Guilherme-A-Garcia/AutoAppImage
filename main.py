@@ -383,7 +383,7 @@ class MainWindow(ctk.CTkToplevel):
         
         self.commands["install_libraries"] = [self.venv_pip, 'install', 'nuitka']
         if self.is_dependent():
-            self.commands["install_libraries"].append(*self.imports)
+            self.commands["install_libraries"].extend(self.imports)
         
         self.commands["nuitka_parts"] = [self.venv_python, '-m', 'nuitka', '--standalone', '--remove-output', '--output-dir=dist']
         
@@ -434,7 +434,8 @@ class MainWindow(ctk.CTkToplevel):
             self.commands["AppDir2"] = ['mkdir', '-p', f'AppDir/usr/share/icons/hicolor/256x256/apps']
         self.commands["AppDir3"] = ['mkdir', '-p', 'AppDir/usr/share/applications']
         
-        self.commands["rename_dist"] = ['mv', f'dist/{os.path.splitext(self.file_name)[0]}.dist', f'dist/{self.final_name}.dist']
+        if self.has_name():
+            self.commands["rename_dist"] = ['mv', f'dist/{os.path.splitext(self.file_name)[0]}.dist', f'dist/{self.final_name}.dist']
         
         self.commands["dist_to_AppDir"] = ['cp', '-r', f'dist/{self.final_name}.dist/.', 'AppDir/usr/bin/']
         self.commands["AppRun"] = ['ln', '-s', f'usr/bin/{self.final_name}', 'AppDir/AppRun']
@@ -444,6 +445,9 @@ class MainWindow(ctk.CTkToplevel):
             self.commands["cp_icon"] = ['cp', self.icon_directory, f'AppDir/usr/share/icons/hicolor/{self.icon_size}/apps/{self.final_name}{self.icon_name[1]}']
             self.commands["cp_icon_base"] = ['cp', self.icon_directory, f'AppDir/{self.final_name}{self.icon_name[1]}']
             self.commands["dir_icon"] = ['ln', '-s', f'AppDir/usr/share/icons/hicolor/{self.icon_size}/apps/{self.final_name}{self.icon_name[1]}', 'AppDir/.DirIcon']
+        else:
+            self.commands["cp_icon"] = ['touch', f'AppDir/usr/share/icons/hicolor/256x256/apps/{self.final_name}.svg']
+            self.commands["cp_icon_base"] = ['cp', f'AppDir/usr/share/icons/hicolor/256x256/apps/{self.final_name}.svg', f'AppDir/{self.final_name}.svg']
         
         self.build_thread(commands=self.commands, directory=self.project_directory, processed_file_name=self.final_name)
         
@@ -505,7 +509,7 @@ class MainWindow(ctk.CTkToplevel):
         try:
             for cmd in self.cmd_order:
                 if cmd in commands and commands[cmd]:
-                        if cmd == "dir_icon":
+                        if cmd == "AppRun":
                             self.process = subprocess.run(commands[cmd], cwd=directory, check=True)
                             self.create_desktop_file(self.final_name)
                             
