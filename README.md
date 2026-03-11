@@ -5,7 +5,7 @@
 
 # AutoAppImage
 AutoAppImage is a helper for building ELF binaries and turning them into .AppImage with extreme ease!<br>
-This application uses the following libraries: CustomTkinter, CTkMessagebox, subprocess, threading, os and sys.<br>
+This application uses the following libraries: CustomTkinter, CTkMessagebox, subprocess, threading, shutil, platform os and sys.<br>
 The available [binaries](https://github.com/Guilherme-A-Garcia/AutoAppImage/releases) were compiled with [Nuitka](https://nuitka.net/).
 
 ## Table of Contents
