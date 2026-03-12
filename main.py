@@ -161,7 +161,7 @@ class MainWindow(ctk.CTkToplevel):
         self.build_button = ctk.CTkButton(self, text="Build AppImage", font=("", 20), command=self.build_appimage, fg_color="#950808", hover_color="#630202", corner_radius=10, border_color="#440000", border_width=1)
         self.build_button.grid(row=4, columnspan=3, sticky="ew", padx=100, pady=(0,20))
         
-        self.widgets = [self.name_entry, self.directory_entry, self.directory_search, self.dependencies_entry, self.optional_data_entry, self.icon_entry, self.icon_search, self.extra_optional_entry, self.extra_optional_search_dir, self.extra_optional_search_file, self.build_button]
+        self.widgets = [self.name_entry, self.directory_entry, self.directory_search, self.dependencies_entry, self.optional_data_entry, self.icon_entry, self.icon_search, self.extra_optional_entry, self.extra_optional_search_dir, self.extra_optional_search_file, self.build_button, self.description_entry]
     
     def success_msg(self, master, option_1="No", option_2="Yes"):
         msg = CTkMessagebox(master=self, message="AppImage successfully generated!\nWould you like to clear leftovers?", icon='check', title='Success', option_1=option_1, option_2=option_2, button_color="#950808", button_hover_color="#630202", border_width=1)
