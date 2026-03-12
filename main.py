@@ -244,7 +244,10 @@ class MainWindow(ctk.CTkToplevel):
         
     def is_optional_dependent(self):
         return bool(self.optional_data_entry.get())
-        
+
+    def has_description(self):
+        return bool(self.description_entry.get() != '')
+            
     def has_icon(self):
         return bool(self.icon_entry_var.get() != '')
     
