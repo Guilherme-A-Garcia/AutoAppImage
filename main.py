@@ -290,6 +290,8 @@ class MainWindow(ctk.CTkToplevel):
                     file.write(f"Exec={project_name}\n")
                     file.write(f"Icon={project_name}\n")
                     file.write("Categories=Utility;\n")
+                    if self.has_description():
+                        file.write(f"Comment={self.description_entry.get()}")
                     file.write("Terminal=false\n")
                     file.write(f"StartupWMClass={project_name}\n")
                     file.close()
