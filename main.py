@@ -85,7 +85,7 @@ class MainWindow(ctk.CTkToplevel):
         self.rowconfigure(4, weight=1)
         
         set_window_icon(self)
-        dynamic_resolution(self, 500, 650)
+        dynamic_resolution(self, 500, 700)
         self.title("AutoAppImage")
         
         self.main_label = ctk.CTkLabel(self, text="AutoAppImage", font=("", 30))
@@ -145,6 +145,11 @@ class MainWindow(ctk.CTkToplevel):
         
         self.extra_optional_search_file = ctk.CTkButton(self.extra_optional_frame, text="🔎 Search file", font=("", 15), command=self.get_extra_dependencies_file, fg_color="#950808", hover_color="#630202", corner_radius=10, border_color="#440000", border_width=1)
         self.extra_optional_search_file.grid(column=1, row=0, padx=2)
+        
+        self.description_label = ctk.CTkLabel(self.entry_frame, text="Include a description for your AppImage:", font=("", 16))
+        self.description_label.pack(anchor="center", padx=20)
+        self.description_entry = ctk.CTkEntry(self.entry_frame, placeholder_text="Leave this field empty if you don't want a description")
+        self.description_entry.pack(anchor="center", padx=30, fill='x', pady=(2,10))
         
         self.build_button_separator = ctk.CTkFrame(self.entry_frame, height=1, fg_color="gray", bg_color="gray")
         self.build_button_separator.pack(fill='x', pady=(5,0))
