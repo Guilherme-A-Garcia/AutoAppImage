@@ -164,7 +164,7 @@ class MainWindow(ctk.CTkToplevel):
         self.widgets = [self.name_entry, self.directory_entry, self.directory_search, self.dependencies_entry, self.optional_data_entry, self.icon_entry, self.icon_search, self.extra_optional_entry, self.extra_optional_search_dir, self.extra_optional_search_file, self.build_button]
     
     def success_msg(self, master, option_1="No", option_2="Yes"):
-        msg = CTkMessagebox(master=self, message="AppImage successfully generated!\nWould you like to clean leftovers?", icon='check', title='Success', option_1=option_1, option_2=option_2, button_color="#950808", button_hover_color="#630202", border_width=1)
+        msg = CTkMessagebox(master=self, message="AppImage successfully generated!\nWould you like to clear leftovers?", icon='check', title='Success', option_1=option_1, option_2=option_2, button_color="#950808", button_hover_color="#630202", border_width=1)
         if msg.get() == option_2:
             self.cleanup()
         return
