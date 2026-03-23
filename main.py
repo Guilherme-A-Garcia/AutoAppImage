@@ -56,6 +56,7 @@ class Controller():
         
         self.show_main_window()
         
+        self.fetch_git_version()
 
     def show_main_window(self):
         self.close_current()
@@ -66,7 +67,11 @@ class Controller():
         self.current_window = UpdatingWindow(self)
     
     def fetch_git_version(self):
-        pass
+        url = "https://github.com/Guilherme-A-Garcia/AutoAppImage/releases/latest"
+        req_response = requests.get(url)
+        soup = BeautifulSoup(req_response.text, 'html.parser')
+        git_ver = soup.find('span', class_='css-truncate-target').text.strip()
+        print(f"GitHub latest release version: {git_ver}")
         
     def auto_update_thread(self):
         pass
