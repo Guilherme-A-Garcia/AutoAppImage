@@ -82,7 +82,7 @@ class Controller():
     def auto_update_thread(self):
         def update_thread(inputted_thread):
             if inputted_thread.is_alive():
-                self.current_window.after(20, update_thread)
+                self.current_window.after(20, lambda inputted_thread=inputted_thread: update_thread(inputted_thread))
             else:
                 print(f"Thread {inputted_thread} successfully exited!")
                 if inputted_thread == self.thread1:
