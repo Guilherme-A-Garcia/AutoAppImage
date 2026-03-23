@@ -70,6 +70,9 @@ class Controller():
 
     def update_app(self):
         pass
+        
+    def get_app_dir(self):
+        pass
 
 class MainWindow(ctk.CTkToplevel):
     def __init__(self, app):
