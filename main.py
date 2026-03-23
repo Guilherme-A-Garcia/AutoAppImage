@@ -53,10 +53,6 @@ class Controller():
         
         self.show_main_window()
         
-    def close_current(self):
-        if self.current_window is not None:
-            self.current_window.destroy()
-            self.current_window = None
 
     def show_main_window(self):
         self.close_current()
@@ -73,6 +69,14 @@ class Controller():
         
     def get_app_dir(self):
         pass
+            
+    def close_and_rename(self):
+        pass
+    
+    def close_current(self):
+        if self.current_window is not None:
+            self.current_window.destroy()
+            self.current_window = None
 
 class MainWindow(ctk.CTkToplevel):
     def __init__(self, app):
