@@ -112,7 +112,7 @@ class Controller():
         
         if os.path.exists(cwd):
             url = 'https://github.com/Guilherme-A-Garcia/AutoAppImage/releases/latest/download/AutoAppImage-x86_64.AppImage'
-            file_path = os.path.join(cwd, 'AutoAppImage-x86_64.AppImage')
+            file_path = os.path.join(cwd, 'AutoAppImage-x86_64-NEW.AppImage')
             
             print(f'Downloading to: {file_path}')
             
