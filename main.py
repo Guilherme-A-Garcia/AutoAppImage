@@ -65,6 +65,8 @@ class Controller():
     def fetch_git_version(self):
         pass
         
+    def auto_update_thread(self):
+        pass
 
 
 class MainWindow(ctk.CTkToplevel):
