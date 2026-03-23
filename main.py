@@ -575,5 +575,10 @@ class MainWindow(ctk.CTkToplevel):
             self.cleanup()
             return
 
+class UpdatingWindow(ctk.CTkToplevel):
+    def __init__(self, app):
+        super.__init__(app.root)
+        self.app = app
+
 if __name__ == "__main__":
     main()
