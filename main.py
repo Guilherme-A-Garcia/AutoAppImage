@@ -134,7 +134,16 @@ class Controller():
         return os.getcwd()
             
     def close_and_rename(self):
-        pass
+        new_file = 'AutoAppImage-x86_64-NEW.AppImage'
+        file_name = 'AutoAppImage-x86_64.AppImage'
+        
+        cmd = ['sh', '-c', f'(sleep 1; mv "{new_file}" "{file_name}"; chmod +x "{file_name}"; exec "{os.path.abspath(file_name)}") >/dev/null 2>&1']
+    
+        subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stdin=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True, close_fds=True)
+        os._exit(0)
+        self.root.destroy()
+        sys.exit()
+            
     
     def close_current(self):
         if self.current_window is not None:
