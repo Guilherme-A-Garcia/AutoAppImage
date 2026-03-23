@@ -80,7 +80,13 @@ class Controller():
             print(f"Error fetching GitHub version: {e}")
         
     def auto_update_thread(self):
-        pass
+        def update_thread(inputted_thread):
+            pass
+        
+        
+        
+        def check_update():
+            pass
 
     def update_app(self):
         pass
