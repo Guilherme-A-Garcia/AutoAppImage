@@ -47,7 +47,7 @@ def set_window_icon(root):
         print(f"Couldn't load icon: {e}")
 
 class Controller():
-    CURRENT_VERSION = "v1.2.0"
+    CURRENT_VERSION = "v1.1.0"
     def __init__(self):
         self.different_version = False
         self.current_window = None
@@ -72,6 +72,9 @@ class Controller():
         soup = BeautifulSoup(req_response.text, 'html.parser')
         git_ver = soup.find('span', class_='css-truncate-target').text.strip()
         print(f"GitHub latest release version: {git_ver}")
+        
+        if git_ver != Controller.CURRENT_VERSION:
+            self.different_version = True
         
     def auto_update_thread(self):
         pass
