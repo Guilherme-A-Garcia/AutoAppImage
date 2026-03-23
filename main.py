@@ -47,7 +47,7 @@ def set_window_icon(root):
         print(f"Couldn't load icon: {e}")
 
 class Controller():
-    CURRENT_VERSION = "v1.1.0"
+    CURRENT_VERSION = "v1.2.0"
     def __init__(self):
         self.different_version = False
         self.current_window = None
