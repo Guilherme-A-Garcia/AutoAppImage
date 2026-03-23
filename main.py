@@ -1,13 +1,13 @@
-import os
-import sys
-import stat
-import shutil
-import platform
-import threading
-import subprocess
+from CTkMessagebox import CTkMessagebox
 from PIL import Image, ImageTk
 import customtkinter as ctk
-from CTkMessagebox import CTkMessagebox
+import subprocess
+import threading
+import platform
+import shutil
+import stat
+import sys
+import os
 
 def main():
     app = Controller()
