@@ -104,7 +104,28 @@ class Controller():
                 return
 
     def update_app(self):
-        pass
+        url = ''
+        file_path = ''
+        cwd = self.get_app_dir()
+        
+        print(f"Resolved update directory: {cwd}")
+        
+        if os.path.exists(cwd):
+            url = 'https://github.com/Guilherme-A-Garcia/AutoAppImage/releases/latest/download/AutoAppImage-x86_64.AppImage'
+            file_path = os.path.join(cwd, 'AutoAppImage-x86_64.AppImage')
+            
+            print(f'Downloading to: {file_path}')
+            
+            try:
+                urllib.request.urlretrieve(url, file_path)
+            except Exception as e:
+                err_msg(f'An error has occurred during downloading the update, closing application: {e}')
+                self.close_current()
+                self.root.destroy()
+            
+            success_msg = CTkMessagebox(master=self.current_window, message='The app has successfully updated! Restarting application...', icon='check', option_focus=1, button_color="#950808", button_hover_color="#630202")
+            success_msg.get()
+            self.close_and_rename()
         
     def get_app_dir(self):
         if getattr(sys, 'frozen', False):
