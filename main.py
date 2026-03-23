@@ -67,14 +67,17 @@ class Controller():
         self.current_window = UpdatingWindow(self)
     
     def fetch_git_version(self):
-        url = "https://github.com/Guilherme-A-Garcia/AutoAppImage/releases/latest"
-        req_response = requests.get(url)
-        soup = BeautifulSoup(req_response.text, 'html.parser')
-        git_ver = soup.find('span', class_='css-truncate-target').text.strip()
-        print(f"GitHub latest release version: {git_ver}")
-        
-        if git_ver != Controller.CURRENT_VERSION:
-            self.different_version = True
+        try:
+            url = "https://github.com/Guilherme-A-Garcia/AutoAppImage/releases/latest"
+            req_response = requests.get(url)
+            soup = BeautifulSoup(req_response.text, 'html.parser')
+            git_ver = soup.find('span', class_='css-truncate-target').text.strip()
+            print(f"GitHub latest release version: {git_ver}")
+            
+            if git_ver != Controller.CURRENT_VERSION:
+                self.different_version = True
+        except Exception as e:
+            print(f"Error fetching GitHub version: {e}")
         
     def auto_update_thread(self):
         pass
