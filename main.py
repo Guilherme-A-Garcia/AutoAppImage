@@ -46,6 +46,7 @@ def set_window_icon(root):
 class Controller():
     CURRENT_VERSION = "v1.2.0"
     def __init__(self):
+        self.different_version = False
         self.current_window = None
         self.root = ctk.CTk()
         self.root.withdraw()
@@ -60,6 +61,11 @@ class Controller():
     def show_main_window(self):
         self.close_current()
         self.current_window = MainWindow(self)
+    
+    def fetch_git_version(self):
+        pass
+        
+
 
 class MainWindow(ctk.CTkToplevel):
     def __init__(self, app):
