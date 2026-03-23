@@ -44,6 +44,7 @@ def set_window_icon(root):
         print(f"Couldn't load icon: {e}")
 
 class Controller():
+    CURRENT_VERSION = "v1.2.0"
     def __init__(self):
         self.current_window = None
         self.root = ctk.CTk()
@@ -555,4 +556,4 @@ class MainWindow(ctk.CTkToplevel):
             return
 
 if __name__ == "__main__":
-    main()  
+    main()
