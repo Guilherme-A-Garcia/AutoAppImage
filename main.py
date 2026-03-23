@@ -107,7 +107,31 @@ class Controller():
         pass
         
     def get_app_dir(self):
-        pass
+        if getattr(sys, 'frozen', False):
+            try:
+                path = os.path.abspath(sys.argv[0])
+                dir_path = os.path.dirname(path)
+                if os.path.exists(dir_path):
+                    return dir_path
+            except Exception:
+                pass
+        
+            try:
+                cwd = os.getcwd()
+                if os.path.exists(cwd):
+                    return cwd
+            except Exception:
+                pass
+            
+            try:
+                temp_dir = os.path.dirname(sys.executable)
+                parent = os.path.abspath(os.path.join(temp_dir, '..'))
+                if os.path.exists(parent):
+                    return parent
+            except Exception:
+                pass
+        
+        return os.getcwd()
             
     def close_and_rename(self):
         pass
