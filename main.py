@@ -59,7 +59,8 @@ class Controller():
         self.current_window = MainWindow(self)
     
     def show_updating_window(self):
-        pass
+        self.close_current()
+        self.current_window = UpdatingWindow(self)
     
     def fetch_git_version(self):
         pass
