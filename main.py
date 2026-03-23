@@ -1,13 +1,16 @@
-import os
-import sys
-import stat
-import shutil
-import platform
-import threading
-import subprocess
-from PIL import Image, ImageTk
-import customtkinter as ctk
 from CTkMessagebox import CTkMessagebox
+from PIL import Image, ImageTk
+from bs4 import BeautifulSoup
+import customtkinter as ctk
+import urllib.request
+import subprocess
+import threading
+import platform
+import requests
+import shutil
+import stat
+import sys
+import os
 
 def main():
     app = Controller()
@@ -44,21 +47,129 @@ def set_window_icon(root):
         print(f"Couldn't load icon: {e}")
 
 class Controller():
+    CURRENT_VERSION = "v1.2.0"
     def __init__(self):
+        self.different_version = False
         self.current_window = None
         self.root = ctk.CTk()
         self.root.withdraw()
         
         self.show_main_window()
         
-    def close_current(self):
-        if self.current_window is not None:
-            self.current_window.destroy()
-            self.current_window = None
+        self.auto_update_thread()
 
     def show_main_window(self):
         self.close_current()
         self.current_window = MainWindow(self)
+    
+    def show_updating_window(self):
+        self.close_current()
+        self.current_window = UpdatingWindow(self)
+    
+    def fetch_git_version(self):
+        try:
+            url = "https://github.com/Guilherme-A-Garcia/AutoAppImage/releases/latest"
+            req_response = requests.get(url)
+            soup = BeautifulSoup(req_response.text, 'html.parser')
+            git_ver = soup.find('span', class_='css-truncate-target').text.strip()
+            print(f"GitHub latest release version: {git_ver}")
+            
+            if git_ver != Controller.CURRENT_VERSION:
+                self.different_version = True
+        except Exception as e:
+            print(f"Error fetching GitHub version: {e}")
+        
+    def auto_update_thread(self):
+        def update_thread(inputted_thread):
+            if inputted_thread.is_alive():
+                self.current_window.after(20, lambda inputted_thread=inputted_thread: update_thread(inputted_thread))
+            else:
+                print(f"Thread {inputted_thread} successfully exited!")
+                if inputted_thread == self.thread1:
+                    check_update()
+        
+        self.thread1 = threading.Thread(target=self.fetch_git_version)
+        self.thread1.start()
+        update_thread(self.thread1)
+        
+        def check_update():
+            if self.different_version:
+                msg = CTkMessagebox(master=self.current_window, message="A new version has been detected, would you like to update the app?", option_1='Yes', option_2='No', option_focus=2,  button_color="#950808", button_hover_color="#630202")
+                if msg.get() == 'Yes':
+                    self.show_updating_window()
+                    self.thread2 = threading.Thread(target=self.update_app)
+                    self.thread2.start()
+                    update_thread(self.thread2)
+            else:
+                return
+
+    def update_app(self):
+        url = ''
+        file_path = ''
+        cwd = self.get_app_dir()
+        
+        print(f"Resolved update directory: {cwd}")
+        
+        if os.path.exists(cwd):
+            url = 'https://github.com/Guilherme-A-Garcia/AutoAppImage/releases/latest/download/AutoAppImage-x86_64.AppImage'
+            file_path = os.path.join(cwd, 'AutoAppImage-x86_64-NEW.AppImage')
+            
+            print(f'Downloading to: {file_path}')
+            
+            try:
+                urllib.request.urlretrieve(url, file_path)
+            except Exception as e:
+                err_msg(f'An error has occurred during downloading the update, closing application: {e}')
+                self.close_current()
+                self.root.destroy()
+            
+            success_msg = CTkMessagebox(master=self.current_window, message='The app has successfully updated! Restarting application...', icon='check', option_focus=1, button_color="#950808", button_hover_color="#630202")
+            success_msg.get()
+            self.close_and_rename()
+        
+    def get_app_dir(self):
+        if getattr(sys, 'frozen', False):
+            try:
+                path = os.path.abspath(sys.argv[0])
+                dir_path = os.path.dirname(path)
+                if os.path.exists(dir_path):
+                    return dir_path
+            except Exception:
+                pass
+        
+            try:
+                cwd = os.getcwd()
+                if os.path.exists(cwd):
+                    return cwd
+            except Exception:
+                pass
+            
+            try:
+                temp_dir = os.path.dirname(sys.executable)
+                parent = os.path.abspath(os.path.join(temp_dir, '..'))
+                if os.path.exists(parent):
+                    return parent
+            except Exception:
+                pass
+        
+        return os.getcwd()
+            
+    def close_and_rename(self):
+        new_file = 'AutoAppImage-x86_64-NEW.AppImage'
+        file_name = 'AutoAppImage-x86_64.AppImage'
+        
+        cmd = ['sh', '-c', f'(sleep 1; mv "{new_file}" "{file_name}"; chmod +x "{file_name}"; exec "{os.path.abspath(file_name)}") >/dev/null 2>&1']
+    
+        subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stdin=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True, close_fds=True)
+        os._exit(0)
+        self.root.destroy()
+        sys.exit()
+            
+    
+    def close_current(self):
+        if self.current_window is not None:
+            self.current_window.destroy()
+            self.current_window = None
 
 class MainWindow(ctk.CTkToplevel):
     def __init__(self, app):
@@ -554,5 +665,31 @@ class MainWindow(ctk.CTkToplevel):
             self.cleanup()
             return
 
+class UpdatingWindow(ctk.CTkToplevel):
+    def __init__(self, app):
+        super().__init__(app.root)
+        self.app = app
+        
+        set_window_icon(self)
+        dynamic_resolution(self, 450, 100)
+        self.resizable(False, False)
+        self.title('Updating...')
+        self.bind("<Button-1>", lambda e: e.widget.focus())
+        self.protocol("WM_DELETE_WINDOW", self.on_closing)
+        
+        self.progress_label1 = ctk.CTkLabel(self, text="Update in progress.", font=("", 20))
+        self.progress_label1.pack()
+        
+        self.progress_label2 = ctk.CTkLabel(self, text="Please, don't close this window while the application is being updated.", font=("", 12))
+        self.progress_label2.pack()
+        
+        self.progress_bar = ctk.CTkProgressBar(self, orientation="horizontal", height=10, width=400, corner_radius=10, progress_color="#770505", fg_color="#808080", mode="indeterminate", border_color="#1d0000", border_width=1)
+        self.progress_bar.pack(pady=10)
+        self.progress_bar.start()
+        
+    def on_closing(self):
+        self.destroy()
+        self.app.root.destroy()
+
 if __name__ == "__main__":
-    main()  
+    main()
