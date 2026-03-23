@@ -96,7 +96,7 @@ class Controller():
             if self.different_version:
                 msg = CTkMessagebox(master=self.current_window, message="A new version has been detected, would you like to update the app?", option_1='Yes', option_2='No', option_focus=2,  button_color="#950808", button_hover_color="#630202")
                 if msg.get() == 'Yes':
-                    self.show_main_window()
+                    self.show_updating_window()
                     self.thread2 = threading.Thread(target=self.update_app)
                     self.thread2.start()
                     update_thread(self.thread2)
