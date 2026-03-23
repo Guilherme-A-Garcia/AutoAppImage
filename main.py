@@ -68,6 +68,8 @@ class Controller():
     def auto_update_thread(self):
         pass
 
+    def update_app(self):
+        pass
 
 class MainWindow(ctk.CTkToplevel):
     def __init__(self, app):
