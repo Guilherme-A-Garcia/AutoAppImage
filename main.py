@@ -56,7 +56,7 @@ class Controller():
         
         self.show_main_window()
         
-        self.fetch_git_version()
+        self.auto_update_thread()
 
     def show_main_window(self):
         self.close_current()
