@@ -527,6 +527,10 @@ class MainWindow(ctk.CTkToplevel):
             
             for dependency in self.enabled_dependencies:
                 self.commands["nuitka_parts"].append(f'--include-package-data={dependency}')
+
+                if dependency == 'yt_dlp':
+                    self.commands["nuitka_parts"].append(f'--include-module={dependency}')
+                    self.commands["nuitka_parts"].append(f'--nofollow-import-to={dependency}.extractor.lazy_extractors')
         
         if self.has_extra_optional():
             self.extra_deps = set()
